@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proyecto Lilo · Avisar de un rescate</title>
+  <meta name="description" content="Avisa a Chema y su manada de un gato que necesita rescate.">
+  <meta property="og:title" content="Proyecto Lilo · Avisar de un rescate">
+  <meta property="og:description" content="Avisa a Chema y su manada de un gato que necesita rescate.">
+  <meta name="robots" content="noindex">
+  <style>
+    :root {
+      --fondo: #fbf6ef;
+      --tarjeta: #ffffff;
+      --texto: #2b2420;
+      --suave: #7a6e66;
+      --borde: #e6dccf;
+      --acento: #d9772b;
+      --acento-oscuro: #b45f1d;
+      --rojo: #c8412f;
+      --verde: #3f8a55;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--fondo);
+      color: var(--texto);
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; }
+    header { text-align: center; margin-bottom: 16px; }
+    header .huella { font-size: 40px; }
+    .marca { font-size: 30px; font-weight: 800; margin: 2px 0 0; letter-spacing: -.5px; }
+    .submarca { color: var(--suave); margin: 0; }
+    .pestanas { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 18px 0 20px; }
+    .pestana {
+      width: auto; font: inherit; cursor: pointer; border-radius: 999px;
+      background: transparent; color: var(--suave); border: 0; padding: 8px 6px; font-size: 15px;
+      text-decoration: underline; text-underline-offset: 3px; font-weight: 500;
+    }
+    .pestana.principal { font-size: 17px; font-weight: 700; text-decoration: none; padding: 10px 22px;
+      border: 2px solid var(--acento); color: var(--acento); }
+    .pestana.activa.principal { background: var(--acento); color: #fff; }
+    .pestana.activa:not(.principal) { color: var(--texto); }
+    .pestana:hover { background: transparent; }
+    .pestana.principal:hover { background: #fdf1e6; }
+    .pestana.activa.principal:hover { background: var(--acento-oscuro); }
+    h1 { font-size: 24px; margin: 0 0 6px; text-align: center; }
+    .intro { color: var(--suave); text-align: center; margin: 0 0 16px; }
+    .nota {
+      background: #fff8ef; border: 1px solid var(--borde); border-radius: 12px;
+      padding: 12px 14px; margin: 0 0 16px; font-size: 15px;
+    }
+    .emergencia {
+      background: #fdecea; border: 1px solid #f3c4bd; color: #7a2418;
+      border-radius: 12px; padding: 12px 14px; margin: 0 0 20px; font-size: 15px;
+    }
+    fieldset {
+      background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
+      padding: 18px 16px 6px; margin: 0 0 16px;
+    }
+    legend { font-weight: 700; font-size: 18px; padding: 0 6px; }
+    label.campo { display: block; margin-bottom: 14px; }
+    .titulo { display: block; font-weight: 600; margin-bottom: 6px; }
+    .titulo small { font-weight: 400; color: var(--suave); }
+    .req { color: var(--rojo); }
+    input[type=text], input[type=tel], input[type=email], input[type=url], select, textarea {
+      width: 100%; padding: 11px 12px; font: inherit; color: inherit;
+      border: 1px solid var(--borde); border-radius: 10px; background: #fff;
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--acento); border-color: transparent; }
+    .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    @media (max-width: 480px) { .dos { grid-template-columns: 1fr; } }
+    .opciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .opciones label {
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+      border: 1px solid var(--borde); border-radius: 999px; padding: 7px 12px; background: #fff;
+      font-size: 15px;
+    }
+    .opciones input { accent-color: var(--acento); margin: 0; }
+    .opciones label:has(input:checked) { border-color: var(--acento); background: #fdf1e6; }
+    .urgencia label { border-radius: 12px; flex: 1 1 100%; align-items: flex-start; padding: 10px 12px; }
+    .urgencia small { display: block; color: var(--suave); }
+    .check { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 14px; font-size: 15px; }
+    .check input { accent-color: var(--acento); margin-top: 4px; }
+    .fotos-vista { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+    .fotos-vista img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+    .zonas { margin-bottom: 14px; }
+    .zonas details { border: 1px solid var(--borde); border-radius: 12px; margin-bottom: 8px; background: #fff; }
+    .zonas summary { cursor: pointer; padding: 10px 12px; font-weight: 600; list-style-position: inside; }
+    .zonas summary .cuenta { font-weight: 400; color: var(--acento); font-size: 14px; }
+    .zonas .dentro { padding: 0 12px 6px; }
+    .zonas .toda { font-weight: 600; }
+    .pista { color: var(--suave); font-size: 14px; margin: -8px 0 14px; }
+.trampa { position: absolute; left: -9999px; }
+    button {
+      width: 100%; padding: 15px; font: inherit; font-weight: 700; font-size: 17px;
+      color: #fff; background: var(--acento); border: 0; border-radius: 12px; cursor: pointer;
+    }
+    button:hover { background: var(--acento-oscuro); }
+    button:disabled { opacity: .6; cursor: wait; }
+    .error { color: var(--rojo); margin: 10px 0 0; text-align: center; }
+    .gracias { display: none; text-align: center; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 32px 20px; }
+    .gracias .huella { font-size: 48px; }
+    .gracias h2 { margin: 8px 0; color: var(--verde); }
+    .gracias button { margin-top: 16px; background: transparent; color: var(--acento); border: 1px solid var(--acento); }
+    .unete { text-align: center; color: var(--suave); font-size: 15px; margin-top: 28px; }
+    .unete a { color: var(--acento); cursor: pointer; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="huella">🐾</div>
+    <p class="marca">Proyecto Lilo</p>
+    <p class="submarca">Rescates de gatos de Chema y su manada</p>
+  </header>
+
+  <nav class="pestanas">
+    <button type="button" class="pestana principal" data-seccion="rescates">🐾 Rescates</button>
+    <button type="button" class="pestana" data-seccion="asociaciones">Asociaciones</button>
+  </nav>
+
+  <!-- ============================================================ RESCATES -->
+  <section id="rescates">
+    <h1>Avisar de un rescate</h1>
+    <p class="intro">Cuéntanos todo lo que sepas del gato. Cuanto más detalle, antes podemos ayudarle.</p>
+
+    <div class="nota">
+      Chema es una sola persona y no siempre puede llegar a todo: da prioridad a los casos más urgentes y,
+      si el rescate queda lejos, intentará que lo atienda una asociación o un compañero de tu zona.
+    </div>
+
+    <div class="emergencia">
+      <strong>¿Está herido grave o en peligro ahora mismo?</strong> Llévalo o llama a una clínica veterinaria de urgencias cercana o al 112. Después rellena el aviso.
+    </div>
+
+    <form id="form" novalidate>
+      <input class="trampa" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <fieldset>
+        <legend>Tus datos</legend>
+        <label class="campo"><span class="titulo">Tu nombre y apellidos <span class="req">*</span></span>
+          <input type="text" name="nombre" required autocomplete="name"></label>
+        <div class="dos">
+          <label class="campo"><span class="titulo">Teléfono <span class="req">*</span></span>
+            <input type="tel" name="telefono" required autocomplete="tel"></label>
+          <label class="campo"><span class="titulo">Email <small>(opcional, te enviamos confirmación)</small></span>
+            <input type="email" name="email" autocomplete="email"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="whatsapp" checked> Tengo WhatsApp en este número</label>
+        <div class="dos">
+          <label class="campo"><span class="titulo">Tu Instagram o TikTok <small>(opcional)</small></span>
+            <input type="text" name="redes" placeholder="@usuario"></label>
+          <label class="campo"><span class="titulo">Mejor hora para llamarte</span>
+            <input type="text" name="horario" placeholder="Por las tardes, a cualquier hora…"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dónde está</legend>
+        <div class="dos">
+          <label class="campo"><span class="titulo">Provincia <span class="req">*</span></span>
+            <select name="provincia" id="provincia" required><option value="">Elige la provincia…</option></select></label>
+          <label class="campo"><span class="titulo">Localidad <span class="req">*</span></span>
+            <input type="text" name="localidad" required></label>
+        </div>
+        <label class="campo"><span class="titulo">Dirección o punto de referencia <span class="req">*</span></span>
+          <textarea name="lugar" required placeholder="Calle, número, detrás del supermercado, en el parque junto a los columpios…"></textarea></label>
+        <label class="campo"><span class="titulo">Enlace de Google Maps <small>(opcional, ayuda mucho)</small></span>
+          <input type="url" name="mapa" placeholder="https://maps.app.goo.gl/…"></label>
+        <span class="titulo">Tipo de sitio</span>
+        <div class="opciones">
+          <label><input type="radio" name="tipoSitio" value="Calle"> Calle</label>
+          <label><input type="radio" name="tipoSitio" value="Solar o descampado"> Solar o descampado</label>
+          <label><input type="radio" name="tipoSitio" value="Colonia de gatos"> Colonia</label>
+          <label><input type="radio" name="tipoSitio" value="Carretera"> Carretera</label>
+          <label><input type="radio" name="tipoSitio" value="Casa o finca"> Casa o finca</label>
+          <label><input type="radio" name="tipoSitio" value="Lo tengo en casa"> Lo tengo en casa</label>
+          <label><input type="radio" name="tipoSitio" value="Otro"> Otro</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>El gato</legend>
+        <div class="dos">
+          <label class="campo"><span class="titulo">Nombre <small>(si lo sabes)</small></span>
+            <input type="text" name="nombreGato"></label>
+          <label class="campo"><span class="titulo">¿Cuántos gatos son?</span>
+            <select name="cuantos">
+              <option>1</option><option>2</option><option>3</option>
+              <option>Camada de crías</option><option>Más de 3</option>
+            </select></label>
+        </div>
+        <span class="titulo">Edad aproximada</span>
+        <div class="opciones">
+          <label><input type="radio" name="edad" value="Bebé (menos de 2 meses)"> Bebé</label>
+          <label><input type="radio" name="edad" value="Cachorro (2-6 meses)"> Cachorro</label>
+          <label><input type="radio" name="edad" value="Adulto"> Adulto</label>
+          <label><input type="radio" name="edad" value="Mayor"> Mayor</label>
+          <label><input type="radio" name="edad" value="No lo sé"> No lo sé</label>
+        </div>
+        <span class="titulo">Sexo</span>
+        <div class="opciones">
+          <label><input type="radio" name="sexo" value="Macho"> Macho</label>
+          <label><input type="radio" name="sexo" value="Hembra"> Hembra</label>
+          <label><input type="radio" name="sexo" value="No lo sé"> No lo sé</label>
+        </div>
+        <label class="campo"><span class="titulo">Cómo es</span>
+          <input type="text" name="aspecto" placeholder="Atigrado gris, collar rojo, le falta un trozo de oreja…"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cómo está</legend>
+        <span class="titulo">Urgencia <span class="req">*</span></span>
+        <div class="opciones urgencia">
+          <label><input type="radio" name="urgencia" value="EMERGENCIA" required>
+            <span><strong>Emergencia</strong><small>Herido grave, atropellado, atrapado o en peligro ahora</small></span></label>
+          <label><input type="radio" name="urgencia" value="Urgente">
+            <span><strong>Urgente</strong><small>Enfermo, muy delgado, crías solas, hace mucho frío o calor</small></span></label>
+          <label><input type="radio" name="urgencia" value="Puede esperar">
+            <span><strong>Puede esperar unos días</strong><small>Parece estar bien pero necesita un hogar</small></span></label>
+        </div>
+        <span class="titulo">¿Qué le ves? <small>(marca todo lo que veas)</small></span>
+        <div class="opciones">
+          <label><input type="checkbox" name="senales" value="Herida visible"> Herida</label>
+          <label><input type="checkbox" name="senales" value="Cojea"> Cojea</label>
+          <label><input type="checkbox" name="senales" value="Ojos o mocos"> Ojos o mocos</label>
+          <label><input type="checkbox" name="senales" value="Muy delgado"> Muy delgado</label>
+          <label><input type="checkbox" name="senales" value="Embarazada o con crías"> Embarazada o con crías</label>
+          <label><input type="checkbox" name="senales" value="Atrapado"> Atrapado</label>
+          <label><input type="checkbox" name="senales" value="No se mueve"> No se mueve</label>
+          <label><input type="checkbox" name="senales" value="Parece sano"> Parece sano</label>
+        </div>
+        <label class="campo"><span class="titulo">Cuéntanos cómo está <span class="req">*</span></span>
+          <textarea name="estado" required placeholder="Qué le pasa, cómo se comporta, si come…"></textarea></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>La situación</legend>
+        <label class="campo"><span class="titulo">¿Desde cuándo está ahí?</span>
+          <input type="text" name="desdeCuando" placeholder="Desde ayer, hace una semana…"></label>
+        <span class="titulo">¿Crees que lo han abandonado?</span>
+        <div class="opciones">
+          <label><input type="radio" name="abandono" value="Sí, parece abandonado"> Sí, parece abandonado</label>
+          <label><input type="radio" name="abandono" value="Parece callejero"> Parece callejero</label>
+          <label><input type="radio" name="abandono" value="No lo sé"> No lo sé</label>
+        </div>
+        <p class="pista">Pistas de abandono: es dócil o se nota que ha vivido en casa, lleva collar, apareció de repente o han visto cómo lo dejaban.</p>
+        <span class="titulo">¿Se deja coger?</span>
+        <div class="opciones">
+          <label><input type="radio" name="manejo" value="Ya lo tengo recogido"> Ya lo tengo recogido</label>
+          <label><input type="radio" name="manejo" value="Sí, se deja tocar"> Sí, se deja tocar</label>
+          <label><input type="radio" name="manejo" value="Se acerca pero no se deja coger"> Se acerca pero no se deja</label>
+          <label><input type="radio" name="manejo" value="Huye, es asustadizo"> Huye</label>
+          <label><input type="radio" name="manejo" value="No lo sé"> No lo sé</label>
+        </div>
+        <span class="titulo">¿Alguien le da de comer?</span>
+        <div class="opciones">
+          <label><input type="radio" name="comida" value="Sí, yo"> Sí, yo</label>
+          <label><input type="radio" name="comida" value="Sí, otra persona"> Sí, otra persona</label>
+          <label><input type="radio" name="comida" value="No"> No</label>
+          <label><input type="radio" name="comida" value="No lo sé"> No lo sé</label>
+        </div>
+        <span class="titulo">¿Puedes ayudar con algo?</span>
+        <div class="opciones">
+          <label><input type="checkbox" name="ayuda" value="Acogida temporal"> Acogida temporal</label>
+          <label><input type="checkbox" name="ayuda" value="Llevarlo al veterinario"> Llevarlo al veterinario</label>
+          <label><input type="checkbox" name="ayuda" value="Transporte"> Transporte</label>
+          <label><input type="checkbox" name="ayuda" value="Aportar para el veterinario"> Aportar dinero</label>
+          <label><input type="checkbox" name="ayuda" value="Darle de comer mientras tanto"> Darle de comer</label>
+          <label><input type="checkbox" name="ayuda" value="Solo puedo avisar"> Solo puedo avisar</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fotos y más detalles</legend>
+        <label class="campo"><span class="titulo">Fotos o capturas <small>(hasta 5)</small></span>
+          <input type="file" name="fotos" accept="image/*" multiple></label>
+        <div class="fotos-vista" id="vista"></div>
+        <label class="campo"><span class="titulo">Algo más que debamos saber</span>
+          <textarea name="comentarios"></textarea></label>
+        <label class="check"><input type="checkbox" name="consentimiento" required>
+          <span>Acepto que Chema y su manada (Proyecto Lilo) guarde estos datos y los comparta con las asociaciones colaboradoras de la zona, solo para gestionar este rescate y contactar conmigo. <span class="req">*</span></span></label>
+      </fieldset>
+
+      <button type="submit">Enviar aviso</button>
+      <p class="error" role="alert"></p>
+    </form>
+
+    <section class="gracias">
+      <div class="huella">🐈</div>
+      <h2>¡Aviso recibido!</h2>
+      <p>Gracias por ayudar. Chema te llamará lo antes posible al teléfono que nos has dejado.</p>
+      <button type="button" class="otro">Enviar otro aviso</button>
+    </section>
+
+    <p class="unete">¿Sois una asociación o protectora? <a data-ir="asociaciones">Uníos a Proyecto Lilo</a></p>
+  </section>
+
+  <!-- ======================================================== ASOCIACIONES -->
+  <section id="asociaciones" hidden>
+    <h1>Asociaciones</h1>
+    <p class="intro">¿Sois una asociación o protectora? Uníos a Proyecto Lilo para recibir los avisos de rescate de vuestra zona.</p>
+
+    <div class="nota">
+      Cuando Chema apruebe vuestra solicitud, recibiréis en vuestro correo los avisos que entren en las provincias
+      donde actuáis y podréis ver sus carpetas en Google Drive. Para ver las carpetas, usad un correo de Google (Gmail).
+    </div>
+
+    <form id="formAsociacion" novalidate>
+      <input class="trampa" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <fieldset>
+        <legend>La asociación</legend>
+        <label class="campo"><span class="titulo">Nombre de la asociación <span class="req">*</span></span>
+          <input type="text" name="nombre" required autocomplete="organization"></label>
+        <label class="campo"><span class="titulo">Persona de contacto <span class="req">*</span></span>
+          <input type="text" name="contacto" required autocomplete="name"></label>
+        <div class="dos">
+          <label class="campo"><span class="titulo">Correo electrónico <span class="req">*</span></span>
+            <input type="email" name="email" required autocomplete="email" placeholder="asociacion@gmail.com"></label>
+          <label class="campo"><span class="titulo">Teléfono <span class="req">*</span></span>
+            <input type="tel" name="telefono" required autocomplete="tel"></label>
+        </div>
+        <label class="campo"><span class="titulo">Web o redes <small>(opcional)</small></span>
+          <input type="text" name="redes" placeholder="@asociacion, www.asociacion.org"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dónde actuáis</legend>
+        <span class="titulo">Provincias <span class="req">*</span> <small>(abrid vuestra comunidad y marcad las provincias)</small></span>
+        <div class="zonas" id="zonas"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cómo podéis ayudar</legend>
+        <div class="opciones">
+          <label><input type="checkbox" name="ayuda" value="Rescate"> Rescate</label>
+          <label><input type="checkbox" name="ayuda" value="Acogida"> Acogida</label>
+          <label><input type="checkbox" name="ayuda" value="Veterinario"> Veterinario</label>
+          <label><input type="checkbox" name="ayuda" value="Transporte"> Transporte</label>
+          <label><input type="checkbox" name="ayuda" value="Adopción"> Adopción</label>
+          <label><input type="checkbox" name="ayuda" value="Colonias"> Colonias</label>
+        </div>
+        <label class="campo"><span class="titulo">Algo más que queráis contarnos</span>
+          <textarea name="comentarios"></textarea></label>
+        <label class="check"><input type="checkbox" name="consentimiento" required>
+          <span>Aceptamos que Proyecto Lilo guarde estos datos y, una vez aprobada la asociación, nos envíe los avisos de rescate de nuestras provincias con los datos de contacto de quien avisa. Nos comprometemos a usarlos solo para atender esos rescates. <span class="req">*</span></span></label>
+      </fieldset>
+
+      <button type="submit">Enviar solicitud</button>
+      <p class="error" role="alert"></p>
+    </form>
+
+    <section class="gracias">
+      <div class="huella">🤝</div>
+      <h2>¡Solicitud recibida!</h2>
+      <p>Gracias por querer ayudar. Chema revisará vuestra solicitud y os escribiremos al correo cuando esté aprobada.</p>
+      <button type="button" class="otro">Volver</button>
+    </section>
+  </section>
+</main>
+
+<script>
+  // Copia de la web de Apps Script para que cargue en el navegador de Instagram y TikTok (allí el
+  // marco de Apps Script se queda en blanco). Los envíos van a doPost del mismo proyecto.
+  // Si cambian las provincias en Codigo.gs, cámbialas aquí también.
+  const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
+  const COMUNIDADES = {"Andalucía": ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"], "Aragón": ["Huesca", "Teruel", "Zaragoza"], "Asturias": ["Asturias"], "Islas Baleares": ["Islas Baleares"], "Canarias": ["Las Palmas", "Santa Cruz de Tenerife"], "Cantabria": ["Cantabria"], "Castilla-La Mancha": ["Albacete", "Ciudad Real", "Cuenca", "Guadalajara", "Toledo"], "Castilla y León": ["Ávila", "Burgos", "León", "Palencia", "Salamanca", "Segovia", "Soria", "Valladolid", "Zamora"], "Cataluña": ["Barcelona", "Girona", "Lleida", "Tarragona"], "Comunidad Valenciana": ["Alicante", "Castellón", "Valencia"], "Extremadura": ["Badajoz", "Cáceres"], "Galicia": ["A Coruña", "Lugo", "Ourense", "Pontevedra"], "Madrid": ["Madrid"], "Murcia": ["Murcia"], "Navarra": ["Navarra"], "País Vasco": ["Álava", "Bizkaia", "Gipuzkoa"], "La Rioja": ["La Rioja"], "Ceuta": ["Ceuta"], "Melilla": ["Melilla"], "Fuera de España": ["Fuera de España"]};
+  const SECCION = new URLSearchParams(location.search).get('seccion') === 'asociaciones' ? 'asociaciones' : 'rescates';
+
+  /* ---------- Pestañas */
+  function mostrar(seccion) {
+    document.getElementById('rescates').hidden = seccion !== 'rescates';
+    document.getElementById('asociaciones').hidden = seccion !== 'asociaciones';
+    document.querySelectorAll('.pestana').forEach(b => b.classList.toggle('activa', b.dataset.seccion === seccion));
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('[data-seccion]').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.seccion)));
+  document.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', () => mostrar(a.dataset.ir)));
+  mostrar(SECCION === 'asociaciones' ? 'asociaciones' : 'rescates');
+
+  /* ---------- Provincias */
+  const selProvincia = document.getElementById('provincia');
+  Object.entries(COMUNIDADES).forEach(([comunidad, provincias]) => {
+    const grupo = document.createElement('optgroup');
+    grupo.label = comunidad;
+    provincias.forEach(p => grupo.appendChild(new Option(p, p)));
+    selProvincia.appendChild(grupo);
+  });
+
+  const zonas = document.getElementById('zonas');
+  Object.entries(COMUNIDADES).forEach(([comunidad, provincias]) => {
+    const det = document.createElement('details');
+    const sum = document.createElement('summary');
+    sum.innerHTML = '';
+    sum.append(comunidad + ' ');
+    const cuenta = document.createElement('span');
+    cuenta.className = 'cuenta';
+    sum.appendChild(cuenta);
+    det.appendChild(sum);
+    const dentro = document.createElement('div');
+    dentro.className = 'dentro opciones';
+    const casillas = provincias.map(p => {
+      const l = document.createElement('label');
+      const c = document.createElement('input');
+      c.type = 'checkbox'; c.name = 'provincias'; c.value = p;
+      l.append(c, ' ' + p);
+      return l;
+    });
+    if (provincias.length > 1) {
+      const l = document.createElement('label');
+      l.className = 'toda';
+      const c = document.createElement('input');
+      c.type = 'checkbox';
+      c.addEventListener('change', () => { casillas.forEach(x => x.firstChild.checked = c.checked); contar(); });
+      l.append(c, ' Toda la comunidad');
+      dentro.appendChild(l);
+    }
+    casillas.forEach(l => dentro.appendChild(l));
+    det.appendChild(dentro);
+    const contar = () => {
+      const n = casillas.filter(x => x.firstChild.checked).length;
+      cuenta.textContent = n ? '· ' + n + (n === 1 ? ' marcada' : ' marcadas') : '';
+    };
+    dentro.addEventListener('change', contar);
+    zonas.appendChild(det);
+  });
+
+  /* ---------- Fotos */
+  const form = document.getElementById('form');
+  const vista = document.getElementById('vista');
+  const inputFotos = form.elements.fotos;
+  inputFotos.addEventListener('change', () => {
+    vista.innerHTML = '';
+    [...inputFotos.files].slice(0, 5).forEach(f => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      vista.appendChild(img);
+    });
+  });
+
+  // Reduce cada foto a 1600 px de lado y JPEG, para que el envío sea ligero.
+  function reducirFoto(fichero) {
+    return new Promise((ok, mal) => {
+      const img = new Image();
+      img.onload = () => {
+        const escala = Math.min(1, 1600 / Math.max(img.width, img.height));
+        const lienzo = document.createElement('canvas');
+        lienzo.width = Math.round(img.width * escala);
+        lienzo.height = Math.round(img.height * escala);
+        lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+        ok({ base64: lienzo.toDataURL('image/jpeg', 0.82).split(',')[1] });
+      };
+      img.onerror = () => mal(new Error('No se pudo leer una de las fotos.'));
+      img.src = URL.createObjectURL(fichero);
+    });
+  }
+
+  /* ---------- Recoger y enviar */
+  function recoger(f, textos, radios, listas) {
+    const d = {};
+    textos.forEach(n => d[n] = f.elements[n].value.trim());
+    radios.forEach(n => d[n] = (f.querySelector(`input[name="${n}"]:checked`) || {}).value || '');
+    listas.forEach(n => d[n] = [...f.querySelectorAll(`input[name="${n}"]:checked`)].map(i => i.value));
+    d.consentimiento = f.elements.consentimiento.checked;
+    return d;
+  }
+
+  function llamarUnaVez(funcion, datos) {
+    return new Promise((ok, mal) => {
+      // Texto plano sin cabeceras: el navegador no pide permiso CORS antes de mandarlo.
+      fetch(URL_APP, { method: 'POST', body: JSON.stringify({ funcion: funcion, datos: datos }) })
+        .then(r => r.json())
+        .then(r => (r && r.ok) ? ok(r) : mal(new Error((r && r.error) || 'No se pudo enviar. Inténtalo otra vez.')),
+              () => mal(new Error('No se pudo enviar: falló la conexión. Inténtalo otra vez.')));
+    });
+  }
+
+  // Si Google está ocupado (muchos avisos a la vez) o falla la conexión, se reintenta solo.
+  async function llamar(funcion, datos) {
+    for (let intento = 1; ; intento++) {
+      try {
+        return await llamarUnaVez(funcion, datos);
+      } catch (err) {
+        const mensaje = (err && err.message) || '';
+        if (intento >= 3 || /(Falta|Elige|Tienes|Tenéis|Revisa|Marca) /.test(mensaje)) throw err;
+        await new Promise(r => setTimeout(r, 3000 * intento));
+      }
+    }
+  }
+
+  function preparar(f, { recogerDatos, falta, funcion, textoBoton }) {
+    const seccion = f.closest('section');
+    const boton = f.querySelector('button[type=submit]');
+    const error = f.querySelector('.error');
+    const gracias = seccion.querySelector('.gracias');
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      error.textContent = '';
+      const datos = recogerDatos();
+      const motivo = falta(datos);
+      if (motivo) { error.textContent = motivo; return; }
+      boton.disabled = true;
+      boton.textContent = 'Enviando…';
+      try {
+        if (f === form) datos.fotos = await Promise.all([...inputFotos.files].slice(0, 5).map(reducirFoto));
+        await llamar(funcion, datos);
+        f.style.display = 'none';
+        gracias.style.display = 'block';
+        window.scrollTo(0, 0);
+      } catch (err) {
+        error.textContent = (err && err.message) || 'No se pudo enviar. Inténtalo otra vez.';
+      } finally {
+        boton.disabled = false;
+        boton.textContent = textoBoton;
+      }
+    });
+    gracias.querySelector('.otro').addEventListener('click', () => {
+      f.reset();
+      vista.innerHTML = '';
+      zonas.querySelectorAll('.cuenta').forEach(c => c.textContent = '');
+      f.style.display = '';
+      gracias.style.display = 'none';
+      if (f !== form) mostrar('rescates');
+    });
+  }
+
+  preparar(form, {
+    funcion: 'enviarRescate',
+    textoBoton: 'Enviar aviso',
+    recogerDatos: () => {
+      const d = recoger(form,
+        ['web', 'nombre', 'telefono', 'email', 'redes', 'horario', 'provincia', 'localidad', 'lugar',
+         'mapa', 'nombreGato', 'cuantos', 'aspecto', 'estado', 'desdeCuando', 'comentarios'],
+        ['tipoSitio', 'edad', 'sexo', 'urgencia', 'manejo', 'comida', 'abandono'],
+        ['senales', 'ayuda']);
+      d.whatsapp = form.elements.whatsapp.checked;
+      return d;
+    },
+    falta: d => {
+      if (!d.nombre) return 'Escribe tu nombre.';
+      if (!d.telefono) return 'Escribe tu teléfono para que podamos llamarte.';
+      if (!d.provincia) return 'Elige la provincia.';
+      if (!d.localidad) return 'Escribe la localidad.';
+      if (!d.lugar) return 'Dinos dónde está el gato.';
+      if (!d.urgencia) return 'Elige cómo de urgente es.';
+      if (!d.estado) return 'Cuéntanos cómo está el gato.';
+      if (!d.consentimiento) return 'Tienes que aceptar que guardemos tus datos para poder llamarte.';
+      return '';
+    },
+  });
+
+  const formAsociacion = document.getElementById('formAsociacion');
+  preparar(formAsociacion, {
+    funcion: 'enviarAsociacion',
+    textoBoton: 'Enviar solicitud',
+    recogerDatos: () => recoger(formAsociacion,
+      ['web', 'nombre', 'contacto', 'email', 'telefono', 'redes', 'comentarios'], [],
+      ['provincias', 'ayuda']),
+    falta: d => {
+      if (!d.nombre) return 'Escribid el nombre de la asociación.';
+      if (!d.contacto) return 'Escribid la persona de contacto.';
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) return 'Escribid un correo electrónico válido.';
+      if (!d.telefono) return 'Escribid un teléfono.';
+      if (!d.provincias.length) return 'Marcad al menos una provincia donde actuáis.';
+      if (!d.consentimiento) return 'Tenéis que aceptar las condiciones para apuntaros.';
+      return '';
+    },
+  });
+</script>
+</body>
+</html>
