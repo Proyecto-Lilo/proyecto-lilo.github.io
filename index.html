@@ -151,6 +151,14 @@
     .historial li { border-left: 3px solid var(--acento); padding: 4px 0 10px 12px; margin-left: 4px; }
     .historial .cuando { color: var(--suave); font-size: 13px; }
     .ok { color: var(--verde); text-align: center; margin: 10px 0 0; }
+    .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 0 0 14px; }
+    .galeria a { position: relative; display: block; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+      background: #f3ece2; border: 1px solid var(--borde); color: var(--suave); font-size: 12px; text-decoration: none; }
+    .galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .galeria .etiqueta { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; background: rgba(0,0,0,.55);
+      color: #fff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .galeria .sin { display: flex; align-items: center; justify-content: center; height: 100%; padding: 6px; text-align: center; }
+    .subtitulo-galeria { font-weight: 600; margin: 4px 0 8px; }
   </style>
 </head>
 <body>
@@ -203,6 +211,7 @@
             <input type="email" name="email" autocomplete="email"></label>
         </div>
         <label class="check"><input type="checkbox" name="whatsapp" checked> Tengo WhatsApp en este número</label>
+        <label class="check"><input type="checkbox" name="avisarme" checked> Si dejo mi email, avisadme cuando el animal esté a salvo</label>
         <div class="dos">
           <label class="campo"><span class="titulo">Tu Instagram o TikTok <small>(opcional)</small></span>
             <input type="text" name="redes" placeholder="@usuario"></label>
@@ -451,11 +460,19 @@
       </fieldset>
 
       <fieldset id="bloqueEstado" hidden>
-        <legend>Actualizar el caso</legend>
+        <legend>Contad cómo va</legend>
         <label class="campo"><span class="titulo">Estado</span>
           <select id="selEstado"></select></label>
-        <label class="campo"><span class="titulo">Qué ha pasado <small>(opcional)</small></span>
+        <label class="campo"><span class="titulo">Qué ha pasado</span>
           <textarea id="notaEstado" placeholder="Lo hemos recogido, está en el veterinario…"></textarea></label>
+        <label class="campo"><span class="titulo">Fotos <small>(hasta 5)</small></span>
+          <input type="file" id="fotosNovedad" accept="image/*" multiple></label>
+        <div class="fotos-vista" id="vistaNovedad"></div>
+        <p class="pista" id="pistaVideos" hidden>🎬 <strong>Vídeos:</strong> subidlos a la
+          <a id="enlaceSubir" target="_blank" rel="noopener">carpeta «2 · Seguimiento» del caso</a> desde la app de Google Drive
+          del móvil (con el mismo correo con el que os apuntasteis). Saldrán aquí abajo, en «Fotos y vídeos».</p>
+        <label class="check"><input type="checkbox" id="redes"> <span>Autorizamos a Proyecto Lilo a usar las fotos y vídeos
+          de este caso en sus redes sociales.</span></label>
         <button type="button" id="btnEstado">Guardar</button>
         <p style="margin:14px 0 6px"><button type="button" class="peligro" id="btnSoltar">No podemos ir: soltar el caso</button></p>
       </fieldset>
@@ -472,6 +489,11 @@
       <fieldset>
         <legend>Historial</legend>
         <ul class="historial" id="casoHistorial"></ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fotos y vídeos</legend>
+        <div id="casoGaleria"></div>
       </fieldset>
 
       <fieldset>
@@ -767,6 +789,7 @@
         ['animal', 'tipoSitio', 'edad', 'sexo', 'tamano', 'collar', 'urgencia', 'manejo', 'comida', 'abandono'],
         ['senales', 'ayuda']);
       d.whatsapp = form.elements.whatsapp.checked;
+      d.avisarme = form.elements.avisarme.checked;
       return d;
     },
     falta: d => {
@@ -999,7 +1022,10 @@
       $('bloqueQuedarse').hidden = !r.puede.quedarse;
       $('tituloQuedarse').textContent = r.yo.rol === 'chema' ? '¿Te lo quedas tú?' : '¿Podéis ir vosotros?';
       $('btnQuedarse').textContent = r.yo.rol === 'chema' ? '🐾 Me encargo yo' : '🐾 Vamos nosotros';
-      $('bloqueEstado').hidden = !r.puede.cambiarEstado;
+      $('bloqueEstado').hidden = !r.puede.novedad;
+      $('pistaVideos').hidden = !c.subir;
+      if (c.subir) $('enlaceSubir').href = c.subir;
+      $('redes').checked = !!c.redes;
       $('btnSoltar').hidden = !r.puede.soltar;
       const sel = $('selEstado');
       sel.innerHTML = '';
@@ -1013,8 +1039,45 @@
         li.appendChild(crear('div', 'cuando', h.fecha + ' · ' + h.quien));
         li.appendChild(crear('div', '', h.que + (h.estado ? ': ' + h.estado : '')));
         if (h.texto) li.appendChild(crear('div', 'pista', '«' + h.texto + '»'));
+        if (h.archivos && h.archivos.length) {
+          const fila = crear('div', 'pista');
+          h.archivos.forEach((url, i) => {
+            const a = crear('a', '', '📷 foto ' + (i + 1));
+            a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.style.marginRight = '10px';
+            fila.appendChild(a);
+          });
+          li.appendChild(fila);
+        }
         lista.appendChild(li);
       });
+      const galeria = $('casoGaleria');
+      galeria.innerHTML = '';
+      const grupos = [['aviso', 'Del aviso'], ['seguimiento', 'Del seguimiento']];
+      let alguno = false;
+      grupos.forEach(([de, titulo]) => {
+        const suyos = (c.archivos || []).filter(f => f.de === de);
+        if (!suyos.length) return;
+        alguno = true;
+        galeria.appendChild(crear('div', 'subtitulo-galeria', titulo + ' (' + suyos.length + ')'));
+        const rejilla = crear('div', 'galeria');
+        suyos.forEach(f => {
+          const a = crear('a');
+          a.href = f.url; a.target = '_blank'; a.rel = 'noopener'; a.title = f.nombre;
+          if (f.tipo === 'foto' || f.tipo === 'video') {
+            const img = crear('img');
+            img.loading = 'lazy'; img.alt = f.nombre;
+            img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(f.id) + '&sz=w320';
+            img.onerror = () => { img.remove(); a.prepend(crear('div', 'sin', f.tipo === 'video' ? '🎬 Vídeo' : '📷 Foto')); };
+            a.appendChild(img);
+          } else {
+            a.appendChild(crear('div', 'sin', '📄 ' + f.nombre));
+          }
+          a.appendChild(crear('span', 'etiqueta', (f.tipo === 'video' ? '▶ ' : '') + f.nombre));
+          rejilla.appendChild(a);
+        });
+        galeria.appendChild(rejilla);
+      });
+      if (!alguno) galeria.appendChild(crear('p', 'pista', 'Todavía no hay fotos ni vídeos.'));
       $('casoAviso').textContent = c.aviso || 'No hemos podido leer el aviso.';
       $('casoCarpeta').href = c.carpeta;
     };
@@ -1039,8 +1102,22 @@
     };
     $('btnQuedarse').addEventListener('click', e => accion(e.target, { accion: 'quedarse', texto: $('notaQuedarse').value },
       '¡Hecho! El caso es vuestro y el resto de asociaciones ya lo saben.'));
-    $('btnEstado').addEventListener('click', e => accion(e.target, { accion: 'estado', estado: $('selEstado').value,
-      texto: $('notaEstado').value }, 'Guardado. Chema ya está avisado.').then(() => { $('notaEstado').value = ''; }));
+    const inputNovedad = $('fotosNovedad');
+    inputNovedad.addEventListener('change', () => {
+      $('vistaNovedad').innerHTML = '';
+      [...inputNovedad.files].slice(0, 5).forEach(f => {
+        const img = crear('img'); img.src = URL.createObjectURL(f); $('vistaNovedad').appendChild(img);
+      });
+    });
+    $('btnEstado').addEventListener('click', async e => {
+      casoError.textContent = '';
+      let fotos = [];
+      try { fotos = await Promise.all([...inputNovedad.files].slice(0, 5).map(reducirFoto)); }
+      catch (err) { casoError.textContent = err.message; return; }
+      await accion(e.target, { accion: 'novedad', estado: $('selEstado').value, texto: $('notaEstado').value,
+        fotos, redes: $('redes').checked }, 'Guardado. Chema ya está avisado.');
+      if (!casoError.textContent) { $('notaEstado').value = ''; inputNovedad.value = ''; $('vistaNovedad').innerHTML = ''; }
+    });
     $('btnSoltar').addEventListener('click', e => {
       if (!confirm('¿Seguro que no podéis ir? El caso quedará libre para otra asociación.')) return;
       accion(e.target, { accion: 'soltar', texto: $('notaEstado').value }, 'El caso vuelve a estar libre.');
