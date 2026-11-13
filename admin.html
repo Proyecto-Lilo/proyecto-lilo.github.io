@@ -270,8 +270,35 @@
       <div class="meta">${x.responsable ? 'Lo lleva: <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}${x.senales ? ' · ' + esc(x.senales) : ''}</div>
       ${x.redes === 'Sí' ? '<div class="meta">📣 Permiso para redes</div>' : ''}
       <div class="acciones"><a class="boton primario" href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>
-        <a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a></div></div>`).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
+        <a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a></div>
+      <div class="acciones"><select data-caso="${esc(x.caso)}" style="flex:1;min-width:0;font:inherit;padding:7px;border:1px solid var(--borde);border-radius:10px">${opcionesAsignar(x)}</select>
+        <button data-asignar="${esc(x.caso)}">Asignar</button></div></div>`).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
   }
+  // Asociaciones dadas de alta: primero las de la provincia y el animal del caso.
+  function opcionesAsignar(x) {
+    const plural = x.animal === 'Perro' ? 'Perros' : 'Gatos';
+    const altas = D.asociaciones.filter(a => a.estado === 'aprobada');
+    const zona = altas.filter(a => a.provincias.includes(x.provincia) && a.animales.includes(plural));
+    const otras = altas.filter(a => !zona.includes(a));
+    const op = a => `<option value="${esc(a.id)}">${esc(a.nombre)}${a.nombre === x.responsable ? ' (la lleva)' : ''}</option>`;
+    return `<option value="">${x.responsable ? 'Pasar a otra asociación…' : 'Asignar a una asociación…'}</option>` +
+      (zona.length ? `<optgroup label="De ${esc(x.provincia)}">${zona.map(op).join('')}</optgroup>` : '') +
+      (otras.length ? `<optgroup label="Otras asociaciones">${otras.map(op).join('')}</optgroup>` : '');
+  }
+  $('listaCasos').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-asignar]');
+    if (!b) return;
+    const caso = b.dataset.asignar;
+    const sel = document.querySelector(`select[data-caso="${caso}"]`);
+    const a = D.asociaciones.find(x => x.id === sel.value);
+    if (!a) { mostrarMensaje('Elige primero una asociación en el desplegable.', true); return; }
+    const x = D.casos.find(c => c.caso === caso);
+    if (!confirm(`¿Asignar el caso ${caso} a «${a.nombre}»?` + (x.responsable ? ` Ahora lo lleva ${x.responsable}: se le avisará de que pasa a otra asociación.` : '') +
+      ' Le llegará el aviso completo con el contacto de quien avisó.')) return;
+    b.disabled = true; b.textContent = 'Asignando…';
+    try { const r = await llamar('adminAsignar', { caso, id: a.id }); D = r; pintarTodo(); mostrarMensaje(r.mensaje); }
+    catch (err) { mostrarMensaje(err.message, true); b.disabled = false; b.textContent = 'Asignar'; }
+  });
 
   /* ---------- Asociaciones */
   function pintarAsociaciones() {
