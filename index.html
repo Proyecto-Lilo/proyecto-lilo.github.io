@@ -145,7 +145,8 @@
     .secundario:hover { background: #fdf1e6; }
     .peligro { background: transparent; color: var(--rojo); border: 1px solid var(--rojo); font-size: 15px; padding: 11px; }
     .peligro:hover { background: #fdecea; }
-    .aviso-texto { white-space: pre-wrap; font: 14px/1.5 ui-monospace, Menlo, monospace; background: #fffaf3;
+    fieldset { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    .aviso-texto { box-sizing: border-box; width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; font: 14px/1.5 ui-monospace, Menlo, monospace; background: #fffaf3;
       border: 1px solid var(--borde); border-radius: 10px; padding: 12px; max-height: 420px; overflow: auto; }
     .historial { list-style: none; margin: 0; padding: 0; }
     .historial li { border-left: 3px solid var(--acento); padding: 4px 0 10px 12px; margin-left: 4px; }
