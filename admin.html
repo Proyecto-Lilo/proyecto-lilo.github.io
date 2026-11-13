@@ -235,9 +235,9 @@
     const c = D.casos, a = D.asociaciones;
     const semana = Date.now() - 7 * 864e5;
     const cifras = [
-      ['Casos en total', c.length, ''], ['Pendientes', c.filter(x => PENDIENTES.includes(x.estado)).length, 'roja'],
+      ['Casos en total', c.length, ''],
       ['Sin asignar', c.filter(x => x.estado === 'Nuevo').length, 'roja'], ['A salvo', c.filter(x => A_SALVO.includes(x.estado)).length, 'verde'],
-      ['Últimos 7 días', c.filter(x => x.ts > semana).length, ''], ['Perros', c.filter(x => x.animal === 'Perro').length, ''],
+      ['Últimos 7 días', c.filter(x => x.ts > semana).length, ''],
       ['Asociaciones activas', a.filter(x => x.estado === 'aprobada').length, 'azul'],
       ['Por aprobar', a.filter(x => x.estado === 'pendiente').length, a.some(x => x.estado === 'pendiente') ? 'roja' : ''],
     ];
@@ -376,8 +376,15 @@
   function popupCaso(x) {
     return `<b>${x.animal === 'Perro' ? '🐕' : '🐈'} Caso ${esc(x.caso)}</b><br>${esc(x.municipio)} (${esc(x.provincia)})<br>
       Urgencia: <b>${esc(x.urgencia)}</b><br>Estado: <b>${esc(x.estado)}</b><br>${x.responsable ? 'Lo lleva: ' + esc(x.responsable) + '<br>' : 'Sin asociación<br>'}
-      Aviso: ${esc(x.fecha)}<br>${x.senales ? esc(x.senales) + '<br>' : ''}
+      Aviso: ${esc(x.fecha)}<br>${x.senales ? esc(x.senales) + '<br>' : ''}${contactoAviso(x.contacto)}
       <a href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a> · <a href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a>`;
+  }
+  function contactoAviso(c) {
+    if (!c || !(c.telefono || c.email)) return '';
+    const tel = telLimpio(c.telefono);
+    return `<div style="margin:6px 0;padding:6px 8px;background:#fff8ef;border-radius:8px"><b style="font-size:13px">Quien avisó${c.nombre ? ': ' + esc(c.nombre) : ''}</b><br>` +
+      (c.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(c.telefono)}</a>` + (c.whatsapp ? ` · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a>` : '') + '<br>' : '') +
+      (c.email ? `✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '') + '</div>';
   }
   function popupAsoc(x) {
     const tel = telLimpio(x.telefono);
