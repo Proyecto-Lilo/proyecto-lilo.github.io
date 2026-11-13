@@ -4,9 +4,9 @@
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Proyecto Lilo · Avisar de un rescate</title>
-  <meta name="description" content="Avisa a Chema y su manada de un gato que necesita rescate.">
+  <meta name="description" content="Avisa a Chema y su manada de un gato o un perro que necesita rescate.">
   <meta property="og:title" content="Proyecto Lilo · Avisar de un rescate">
-  <meta property="og:description" content="Avisa a Chema y su manada de un gato que necesita rescate.">
+  <meta property="og:description" content="Avisa a Chema y su manada de un gato o un perro que necesita rescate.">
   <meta name="robots" content="noindex">
   <style>
     :root {
@@ -32,7 +32,8 @@
     header .huella { font-size: 40px; }
     .marca { font-size: 30px; font-weight: 800; margin: 2px 0 0; letter-spacing: -.5px; }
     .submarca { color: var(--suave); margin: 0; }
-    .pestanas { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 18px 0 20px; }
+    .pestanas { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; margin: 18px 0 20px; }
+    @media (max-width: 400px) { .pestanas { gap: 6px 8px; } .pestana.principal { padding: 9px 16px; } }
     .pestana {
       width: auto; font: inherit; cursor: pointer; border-radius: 999px;
       background: transparent; color: var(--suave); border: 0; padding: 8px 6px; font-size: 15px;
@@ -107,6 +108,30 @@
     .gracias button { margin-top: 16px; background: transparent; color: var(--acento); border: 1px solid var(--acento); }
     .unete { text-align: center; color: var(--suave); font-size: 15px; margin-top: 28px; }
     .unete a { color: var(--acento); cursor: pointer; }
+    .es-gato .solo-perro, .es-perro .solo-gato { display: none !important; }
+    .animal label { font-size: 17px; padding: 10px 18px; }
+    /* Asistencia */
+    .buscador { display: flex; gap: 8px; margin: 0 0 8px; }
+    .buscador input { flex: 1; }
+    .temas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 18px; }
+    @media (max-width: 480px) { .temas { grid-template-columns: 1fr; } }
+    .tema { width: 100%; text-align: left; font-weight: 600; font-size: 15px; padding: 12px 14px;
+      background: var(--tarjeta); color: var(--texto); border: 1px solid var(--borde); border-radius: 12px; }
+    .tema:hover, .tema.activo { background: #fdf1e6; border-color: var(--acento); }
+    .resultados h2 { font-size: 18px; margin: 0 0 10px; }
+    .respuesta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; margin: 0 0 10px; }
+    .respuesta summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
+    .respuesta .cuerpo { padding: 0 14px 12px; }
+    .respuesta .cuerpo p { margin: 0 0 8px; }
+    .respuesta .cuerpo ul { margin: 0 0 8px; padding-left: 20px; }
+    .respuesta .fuente { color: var(--suave); font-size: 13px; }
+    .enlace { width: auto; display: inline-block; padding: 8px 14px; font-size: 15px; margin: 4px 6px 4px 0;
+      background: transparent; color: var(--acento); border: 1px solid var(--acento); }
+    .enlace:hover { background: #fdf1e6; }
+    .modelo-texto { white-space: pre-wrap; font: 14px/1.5 ui-monospace, Menlo, monospace; background: #fffaf3;
+      border: 1px solid var(--borde); border-radius: 10px; padding: 12px; max-height: 360px; overflow: auto; }
+    .sin-respuesta { background: #fff8ef; border: 1px solid var(--borde); border-radius: 14px; padding: 14px; margin: 0 0 12px; }
+    .preguntar { margin-top: 18px; }
   </style>
 </head>
 <body>
@@ -114,18 +139,19 @@
   <header>
     <div class="huella">🐾</div>
     <p class="marca">Proyecto Lilo</p>
-    <p class="submarca">Rescates de gatos de Chema y su manada</p>
+    <p class="submarca">Rescates de gatos y perros de Chema y su manada</p>
   </header>
 
   <nav class="pestanas">
     <button type="button" class="pestana principal" data-seccion="rescates">🐾 Rescates</button>
+    <button type="button" class="pestana" data-seccion="asistencia">Asistencia</button>
     <button type="button" class="pestana" data-seccion="asociaciones">Asociaciones</button>
   </nav>
 
   <!-- ============================================================ RESCATES -->
   <section id="rescates">
     <h1>Avisar de un rescate</h1>
-    <p class="intro">Cuéntanos todo lo que sepas del gato. Cuanto más detalle, antes podemos ayudarle.</p>
+    <p class="intro">Cuéntanos todo lo que sepas del animal. Cuanto más detalle, antes podemos ayudarle.</p>
 
     <div class="nota">
       Chema es una sola persona y no siempre puede llegar a todo: da prioridad a los casos más urgentes y,
@@ -138,6 +164,14 @@
 
     <form id="form" novalidate>
       <input class="trampa" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <fieldset>
+        <legend>¿Qué animal es? <span class="req">*</span></legend>
+        <div class="opciones animal">
+          <label><input type="radio" name="animal" value="Gato" required> 🐈 Un gato</label>
+          <label><input type="radio" name="animal" value="Perro"> 🐕 Un perro</label>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend>Tus datos</legend>
@@ -174,7 +208,7 @@
         <div class="opciones">
           <label><input type="radio" name="tipoSitio" value="Calle"> Calle</label>
           <label><input type="radio" name="tipoSitio" value="Solar o descampado"> Solar o descampado</label>
-          <label><input type="radio" name="tipoSitio" value="Colonia de gatos"> Colonia</label>
+          <label class="solo-gato"><input type="radio" name="tipoSitio" value="Colonia de gatos"> Colonia</label>
           <label><input type="radio" name="tipoSitio" value="Carretera"> Carretera</label>
           <label><input type="radio" name="tipoSitio" value="Casa o finca"> Casa o finca</label>
           <label><input type="radio" name="tipoSitio" value="Lo tengo en casa"> Lo tengo en casa</label>
@@ -183,11 +217,11 @@
       </fieldset>
 
       <fieldset>
-        <legend>El gato</legend>
+        <legend data-gato="El gato" data-perro="El perro">El animal</legend>
         <div class="dos">
           <label class="campo"><span class="titulo">Nombre <small>(si lo sabes)</small></span>
             <input type="text" name="nombreGato"></label>
-          <label class="campo"><span class="titulo">¿Cuántos gatos son?</span>
+          <label class="campo"><span class="titulo" data-gato="¿Cuántos gatos son?" data-perro="¿Cuántos perros son?">¿Cuántos son?</span>
             <select name="cuantos">
               <option>1</option><option>2</option><option>3</option>
               <option>Camada de crías</option><option>Más de 3</option>
@@ -207,8 +241,23 @@
           <label><input type="radio" name="sexo" value="Hembra"> Hembra</label>
           <label><input type="radio" name="sexo" value="No lo sé"> No lo sé</label>
         </div>
+        <div class="solo-perro">
+          <span class="titulo">Tamaño</span>
+          <div class="opciones">
+            <label><input type="radio" name="tamano" value="Pequeño"> Pequeño</label>
+            <label><input type="radio" name="tamano" value="Mediano"> Mediano</label>
+            <label><input type="radio" name="tamano" value="Grande"> Grande</label>
+          </div>
+          <span class="titulo">¿Lleva collar o chapa?</span>
+          <div class="opciones">
+            <label><input type="radio" name="collar" value="Lleva collar o chapa"> Sí</label>
+            <label><input type="radio" name="collar" value="No lleva collar"> No</label>
+            <label><input type="radio" name="collar" value="No lo sé"> No lo sé</label>
+          </div>
+        </div>
         <label class="campo"><span class="titulo">Cómo es</span>
-          <input type="text" name="aspecto" placeholder="Atigrado gris, collar rojo, le falta un trozo de oreja…"></label>
+          <input type="text" name="aspecto" placeholder="Atigrado gris, collar rojo, le falta un trozo de oreja…"
+            data-gato="Atigrado gris, collar rojo, le falta un trozo de oreja…" data-perro="Mestizo marrón, orejas caídas, collar azul…"></label>
       </fieldset>
 
       <fieldset>
@@ -216,7 +265,7 @@
         <span class="titulo">Urgencia <span class="req">*</span></span>
         <div class="opciones urgencia">
           <label><input type="radio" name="urgencia" value="EMERGENCIA" required>
-            <span><strong>Emergencia</strong><small>Herido grave, atropellado, atrapado o en peligro ahora</small></span></label>
+            <span><strong>Emergencia</strong><small>Herido grave, atropellado, atrapado (también en el motor de un coche) o en peligro ahora</small></span></label>
           <label><input type="radio" name="urgencia" value="Urgente">
             <span><strong>Urgente</strong><small>Enfermo, muy delgado, crías solas, hace mucho frío o calor</small></span></label>
           <label><input type="radio" name="urgencia" value="Puede esperar">
@@ -230,8 +279,14 @@
           <label><input type="checkbox" name="senales" value="Muy delgado"> Muy delgado</label>
           <label><input type="checkbox" name="senales" value="Embarazada o con crías"> Embarazada o con crías</label>
           <label><input type="checkbox" name="senales" value="Atrapado"> Atrapado</label>
+          <label class="solo-gato"><input type="checkbox" name="senales" value="Atrapado en el motor de un coche" id="motor"> Atrapado en el motor de un coche</label>
           <label><input type="checkbox" name="senales" value="No se mueve"> No se mueve</label>
           <label><input type="checkbox" name="senales" value="Parece sano"> Parece sano</label>
+        </div>
+        <div class="emergencia" id="avisoMotor" hidden>
+          <strong>Gato en el motor de un coche:</strong> que nadie arranque el coche. Si sabes de quién es, avisa al dueño.
+          Da unos golpes en el capó y espera un poco: a veces sale solo. Si no sale, llama al 112 o a la Policía Local.
+          Hemos marcado el aviso como <strong>Emergencia</strong>.
         </div>
         <label class="campo"><span class="titulo">Cuéntanos cómo está <span class="req">*</span></span>
           <textarea name="estado" required placeholder="Qué le pasa, cómo se comporta, si come…"></textarea></label>
@@ -244,10 +299,10 @@
         <span class="titulo">¿Crees que lo han abandonado?</span>
         <div class="opciones">
           <label><input type="radio" name="abandono" value="Sí, parece abandonado"> Sí, parece abandonado</label>
-          <label><input type="radio" name="abandono" value="Parece callejero"> Parece callejero</label>
+          <label><input type="radio" name="abandono" value="Parece callejero" data-gato="Parece callejero" data-perro="Parece perdido"> <span data-gato="Parece callejero" data-perro="Parece perdido">Parece callejero</span></label>
           <label><input type="radio" name="abandono" value="No lo sé"> No lo sé</label>
         </div>
-        <p class="pista">Pistas de abandono: es dócil o se nota que ha vivido en casa, lleva collar, apareció de repente o han visto cómo lo dejaban.</p>
+        <p class="pista" data-gato="Pistas de abandono: es dócil o se nota que ha vivido en casa, lleva collar, apareció de repente o han visto cómo lo dejaban." data-perro="Pistas de abandono: lleva collar pero nadie lo busca, apareció de repente, está desorientado o han visto cómo lo dejaban.">Pistas de abandono: es dócil o se nota que ha vivido en casa, lleva collar, apareció de repente o han visto cómo lo dejaban.</p>
         <span class="titulo">¿Se deja coger?</span>
         <div class="opciones">
           <label><input type="radio" name="manejo" value="Ya lo tengo recogido"> Ya lo tengo recogido</label>
@@ -290,7 +345,7 @@
     </form>
 
     <section class="gracias">
-      <div class="huella">🐈</div>
+      <div class="huella">🐾</div>
       <h2>¡Aviso recibido!</h2>
       <p>Gracias por ayudar. Chema te llamará lo antes posible al teléfono que nos has dejado.</p>
       <button type="button" class="otro">Enviar otro aviso</button>
@@ -299,14 +354,72 @@
     <p class="unete">¿Sois una asociación o protectora? <a data-ir="asociaciones">Uníos a Proyecto Lilo</a></p>
   </section>
 
+  <!-- ========================================================== ASISTENCIA -->
+  <section id="asistencia" hidden>
+    <h1>Asistencia</h1>
+    <p class="intro">Dudas sobre qué hacer con un gato de la calle o una colonia. Las respuestas salen de la guía para
+      cuidadores de colonias felinas de Chema y su manada y la Federación Dean.</p>
+
+    <div class="emergencia">
+      <strong>¿Es una emergencia?</strong> Si el animal está herido grave o en peligro ahora mismo, llévalo o llama a una
+      clínica veterinaria de urgencias o al 112, y después <a data-ir="rescates">avisa en Rescates</a>.
+    </div>
+
+    <form class="buscador" id="buscador" role="search">
+      <input type="text" id="consulta" placeholder="Escribe tu duda: ¿cómo sé si está esterilizado?" aria-label="Escribe tu duda">
+      <button type="submit" class="enlace" style="margin:0">Buscar</button>
+    </form>
+    <p class="pista" style="margin:0 0 16px">O elige un tema:</p>
+    <div class="temas" id="temas"></div>
+
+    <div class="resultados" id="resultados"></div>
+
+    <section class="preguntar" id="preguntar" hidden>
+      <form id="formPregunta" novalidate>
+        <input class="trampa" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <fieldset>
+          <legend>Pregúntale a Chema</legend>
+          <p class="pista" style="margin:0 0 14px">Tu duda le llegará a Chema por correo y te contestará en cuanto pueda.
+            Si es un rescate urgente, mejor usa el <a data-ir="rescates">aviso de Rescates</a>.</p>
+          <span class="titulo">Es sobre…</span>
+          <div class="opciones">
+            <label><input type="radio" name="animal" value="Gato" checked> Un gato</label>
+            <label><input type="radio" name="animal" value="Perro"> Un perro</label>
+            <label><input type="radio" name="animal" value="Otro"> Otra cosa</label>
+          </div>
+          <label class="campo"><span class="titulo">Tu duda <span class="req">*</span></span>
+            <textarea name="pregunta" required></textarea></label>
+          <div class="dos">
+            <label class="campo"><span class="titulo">Tu nombre</span>
+              <input type="text" name="nombre" autocomplete="name"></label>
+            <label class="campo"><span class="titulo">Provincia</span>
+              <select name="provincia" id="provinciaPregunta"><option value="">Elige la provincia…</option></select></label>
+          </div>
+          <label class="campo"><span class="titulo">Email o teléfono para contestarte <span class="req">*</span></span>
+            <input type="text" name="contacto" required autocomplete="email"></label>
+          <label class="check"><input type="checkbox" name="consentimiento" required>
+            <span>Acepto que Chema y su manada (Proyecto Lilo) guarde estos datos solo para contestar a mi duda. <span class="req">*</span></span></label>
+        </fieldset>
+        <button type="submit">Enviar mi duda</button>
+        <p class="error" role="alert"></p>
+      </form>
+      <section class="gracias">
+        <div class="huella">💬</div>
+        <h2>¡Duda enviada!</h2>
+        <p>Gracias. Chema te contestará en cuanto pueda.</p>
+        <button type="button" class="otro">Hacer otra pregunta</button>
+      </section>
+    </section>
+  </section>
+
   <!-- ======================================================== ASOCIACIONES -->
   <section id="asociaciones" hidden>
     <h1>Asociaciones</h1>
     <p class="intro">¿Sois una asociación o protectora? Uníos a Proyecto Lilo para recibir los avisos de rescate de vuestra zona.</p>
 
     <div class="nota">
-      Cuando Chema apruebe vuestra solicitud, recibiréis en vuestro correo los avisos que entren en las provincias
-      donde actuáis y podréis ver sus carpetas en Google Drive. Para ver las carpetas, usad un correo de Google (Gmail).
+      Cuando Chema apruebe vuestra solicitud, recibiréis en vuestro correo los avisos de los animales con los que trabajáis
+      (gatos, perros o ambos) que entren en las provincias donde actuáis, y podréis ver sus carpetas en Google Drive. Para ver las carpetas, usad un correo de Google (Gmail).
     </div>
 
     <form id="formAsociacion" novalidate>
@@ -332,6 +445,15 @@
         <legend>Dónde actuáis</legend>
         <span class="titulo">Provincias <span class="req">*</span> <small>(abrid vuestra comunidad y marcad las provincias)</small></span>
         <div class="zonas" id="zonas"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Con qué animales trabajáis <span class="req">*</span></legend>
+        <div class="opciones">
+          <label><input type="checkbox" name="animales" value="Gatos"> 🐈 Gatos</label>
+          <label><input type="checkbox" name="animales" value="Perros"> 🐕 Perros</label>
+        </div>
+        <p class="pista" style="margin-top:-4px">Solo os llegarán los avisos de los animales que marquéis.</p>
       </fieldset>
 
       <fieldset>
@@ -363,32 +485,36 @@
   </section>
 </main>
 
+<script src="asistencia.js"></script>
 <script>
   // Copia de la web de Apps Script para que cargue en el navegador de Instagram y TikTok (allí el
   // marco de Apps Script se queda en blanco). Los envíos van a doPost del mismo proyecto.
   // Si cambian las provincias en Codigo.gs, cámbialas aquí también.
   const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
   const COMUNIDADES = {"Andalucía": ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"], "Aragón": ["Huesca", "Teruel", "Zaragoza"], "Asturias": ["Asturias"], "Islas Baleares": ["Islas Baleares"], "Canarias": ["Las Palmas", "Santa Cruz de Tenerife"], "Cantabria": ["Cantabria"], "Castilla-La Mancha": ["Albacete", "Ciudad Real", "Cuenca", "Guadalajara", "Toledo"], "Castilla y León": ["Ávila", "Burgos", "León", "Palencia", "Salamanca", "Segovia", "Soria", "Valladolid", "Zamora"], "Cataluña": ["Barcelona", "Girona", "Lleida", "Tarragona"], "Comunidad Valenciana": ["Alicante", "Castellón", "Valencia"], "Extremadura": ["Badajoz", "Cáceres"], "Galicia": ["A Coruña", "Lugo", "Ourense", "Pontevedra"], "Madrid": ["Madrid"], "Murcia": ["Murcia"], "Navarra": ["Navarra"], "País Vasco": ["Álava", "Bizkaia", "Gipuzkoa"], "La Rioja": ["La Rioja"], "Ceuta": ["Ceuta"], "Melilla": ["Melilla"], "Fuera de España": ["Fuera de España"]};
-  const SECCION = new URLSearchParams(location.search).get('seccion') === 'asociaciones' ? 'asociaciones' : 'rescates';
+  const SECCIONES = ['rescates', 'asistencia', 'asociaciones'];
+  const pedida = new URLSearchParams(location.search).get('seccion');
+  const SECCION = SECCIONES.includes(pedida) ? pedida : 'rescates';
 
   /* ---------- Pestañas */
   function mostrar(seccion) {
-    document.getElementById('rescates').hidden = seccion !== 'rescates';
-    document.getElementById('asociaciones').hidden = seccion !== 'asociaciones';
+    SECCIONES.forEach(id => document.getElementById(id).hidden = seccion !== id);
     document.querySelectorAll('.pestana').forEach(b => b.classList.toggle('activa', b.dataset.seccion === seccion));
     window.scrollTo(0, 0);
   }
   document.querySelectorAll('[data-seccion]').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.seccion)));
-  document.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', () => mostrar(a.dataset.ir)));
-  mostrar(SECCION === 'asociaciones' ? 'asociaciones' : 'rescates');
+  document.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); mostrar(a.dataset.ir); }));
+  mostrar(SECCION);
 
   /* ---------- Provincias */
-  const selProvincia = document.getElementById('provincia');
-  Object.entries(COMUNIDADES).forEach(([comunidad, provincias]) => {
-    const grupo = document.createElement('optgroup');
-    grupo.label = comunidad;
-    provincias.forEach(p => grupo.appendChild(new Option(p, p)));
-    selProvincia.appendChild(grupo);
+  ['provincia', 'provinciaPregunta'].forEach(id => {
+    const sel = document.getElementById(id);
+    Object.entries(COMUNIDADES).forEach(([comunidad, provincias]) => {
+      const grupo = document.createElement('optgroup');
+      grupo.label = comunidad;
+      provincias.forEach(p => grupo.appendChild(new Option(p, p)));
+      sel.appendChild(grupo);
+    });
   });
 
   const zonas = document.getElementById('zonas');
@@ -429,8 +555,39 @@
     zonas.appendChild(det);
   });
 
-  /* ---------- Fotos */
+  /* ---------- Gato o perro */
   const form = document.getElementById('form');
+  function animalElegido() {
+    return (form.querySelector('input[name="animal"]:checked') || {}).value || '';
+  }
+  // Cambia los textos que dependen del animal (data-gato / data-perro) y esconde lo que no aplica.
+  function aplicarAnimal() {
+    const animal = animalElegido();
+    form.classList.toggle('es-gato', animal === 'Gato');
+    form.classList.toggle('es-perro', animal === 'Perro');
+    form.querySelectorAll('[data-gato]').forEach(el => {
+      const texto = animal === 'Perro' ? el.dataset.perro : animal === 'Gato' ? el.dataset.gato : null;
+      if (texto == null) return;
+      if (el.tagName === 'INPUT' && el.type === 'radio') el.value = texto;
+      else if (el.tagName === 'INPUT') el.placeholder = texto;
+      else el.textContent = texto;
+    });
+    // Lo que se ha escondido no puede quedar marcado.
+    form.querySelectorAll(animal === 'Perro' ? '.solo-gato input' : animal === 'Gato' ? '.solo-perro input' : 'x')
+      .forEach(i => { i.checked = false; });
+    avisoMotor.hidden = !motor.checked;
+  }
+  form.querySelectorAll('input[name="animal"]').forEach(i => i.addEventListener('change', aplicarAnimal));
+
+  // Gato en el motor de un coche: aviso de qué hacer y urgencia a Emergencia.
+  const motor = document.getElementById('motor');
+  const avisoMotor = document.getElementById('avisoMotor');
+  motor.addEventListener('change', () => {
+    avisoMotor.hidden = !motor.checked;
+    if (motor.checked) form.querySelector('input[name="urgencia"][value="EMERGENCIA"]').checked = true;
+  });
+
+  /* ---------- Fotos */
   const vista = document.getElementById('vista');
   const inputFotos = form.elements.fotos;
   inputFotos.addEventListener('change', () => {
@@ -486,7 +643,7 @@
         return await llamarUnaVez(funcion, datos);
       } catch (err) {
         const mensaje = (err && err.message) || '';
-        if (intento >= 3 || /(Falta|Elige|Tienes|Tenéis|Revisa|Marca) /.test(mensaje)) throw err;
+        if (intento >= 3 || /(Falta|Elige|Tienes|Tenéis|Revisa|Marca|Escribe|Has) /.test(mensaje)) throw err;
         await new Promise(r => setTimeout(r, 3000 * intento));
       }
     }
@@ -524,7 +681,8 @@
       zonas.querySelectorAll('.cuenta').forEach(c => c.textContent = '');
       f.style.display = '';
       gracias.style.display = 'none';
-      if (f !== form) mostrar('rescates');
+      if (f === form) aplicarAnimal();
+      if (f === formAsociacion) mostrar('rescates');
     });
   }
 
@@ -535,19 +693,20 @@
       const d = recoger(form,
         ['web', 'nombre', 'telefono', 'email', 'redes', 'horario', 'provincia', 'localidad', 'lugar',
          'mapa', 'nombreGato', 'cuantos', 'aspecto', 'estado', 'desdeCuando', 'comentarios'],
-        ['tipoSitio', 'edad', 'sexo', 'urgencia', 'manejo', 'comida', 'abandono'],
+        ['animal', 'tipoSitio', 'edad', 'sexo', 'tamano', 'collar', 'urgencia', 'manejo', 'comida', 'abandono'],
         ['senales', 'ayuda']);
       d.whatsapp = form.elements.whatsapp.checked;
       return d;
     },
     falta: d => {
+      if (!d.animal) return 'Elige si es un gato o un perro.';
       if (!d.nombre) return 'Escribe tu nombre.';
       if (!d.telefono) return 'Escribe tu teléfono para que podamos llamarte.';
       if (!d.provincia) return 'Elige la provincia.';
       if (!d.localidad) return 'Escribe la localidad.';
-      if (!d.lugar) return 'Dinos dónde está el gato.';
+      if (!d.lugar) return 'Dinos dónde está el ' + d.animal.toLowerCase() + '.';
       if (!d.urgencia) return 'Elige cómo de urgente es.';
-      if (!d.estado) return 'Cuéntanos cómo está el gato.';
+      if (!d.estado) return 'Cuéntanos cómo está el ' + d.animal.toLowerCase() + '.';
       if (!d.consentimiento) return 'Tienes que aceptar que guardemos tus datos para poder llamarte.';
       return '';
     },
@@ -559,14 +718,197 @@
     textoBoton: 'Enviar solicitud',
     recogerDatos: () => recoger(formAsociacion,
       ['web', 'nombre', 'contacto', 'email', 'telefono', 'redes', 'comentarios'], [],
-      ['provincias', 'ayuda']),
+      ['provincias', 'animales', 'ayuda']),
     falta: d => {
       if (!d.nombre) return 'Escribid el nombre de la asociación.';
       if (!d.contacto) return 'Escribid la persona de contacto.';
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) return 'Escribid un correo electrónico válido.';
       if (!d.telefono) return 'Escribid un teléfono.';
       if (!d.provincias.length) return 'Marcad al menos una provincia donde actuáis.';
+      if (!d.animales.length) return 'Marcad con qué animales trabajáis.';
       if (!d.consentimiento) return 'Tenéis que aceptar las condiciones para apuntaros.';
+      return '';
+    },
+  });
+
+  /* ---------- Asistencia: respuestas de la guía, buscador y «Pregúntale a Chema» */
+  const resultados = document.getElementById('resultados');
+  const cajaPreguntar = document.getElementById('preguntar');
+  const formPregunta = document.getElementById('formPregunta');
+  const NOMBRES_GUIA = 'Guía para cuidadores/as de colonias felinas';
+
+  // Quita tildes y mayúsculas, y se queda con las palabras que dicen algo.
+  const VACIAS = new Set(('a al algo algun alguna como con cual cuando de del donde el ella ellos en es esta este esto ' +
+    'estan hay la las le les lo los me mi mis muy no o para pero por que se si sin su sus te tengo tiene un una unos y ya ' +
+    'yo hacer hago puedo debo quiero gato gatos').split(' '));
+  function palabras(texto) {
+    return String(texto).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9ñ\s]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !VACIAS.has(w));
+  }
+  // Las palabras de cada respuesta, con más peso para la pregunta y las palabras clave.
+  const indice = ASISTENCIA.preguntas.map(q => ({
+    q,
+    fuertes: new Set(palabras(q.pregunta + ' ' + q.claves)),
+    flojas: new Set(palabras(q.respuesta.join(' '))),
+  }));
+  function parecido(a, b) { return a === b || (a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5)); }
+  function buscar(texto) {
+    const buscadas = palabras(texto);
+    if (!buscadas.length) return [];
+    const puntuadas = indice.map(({ q, fuertes, flojas }) => {
+      let puntos = 0;
+      buscadas.forEach(w => {
+        if ([...fuertes].some(f => parecido(w, f))) puntos += 3;
+        else if ([...flojas].some(f => parecido(w, f))) puntos += 1;
+      });
+      return { q, puntos };
+    }).sort((a, b) => b.puntos - a.puntos);
+    // Hace falta al menos una palabra fuerte (de la pregunta o sus claves) y quedarse cerca de la mejor.
+    const mejor = (puntuadas[0] || {}).puntos || 0;
+    if (mejor < 3) return [];
+    return puntuadas.filter(r => r.puntos >= Math.max(3, mejor * 0.6)).slice(0, 3).map(r => r.q);
+  }
+
+  function crear(etiqueta, clase, texto) {
+    const el = document.createElement(etiqueta);
+    if (clase) el.className = clase;
+    if (texto != null) el.textContent = texto;
+    return el;
+  }
+  function tarjeta(q, abierta) {
+    const det = crear('details', 'respuesta');
+    det.open = !!abierta;
+    det.appendChild(crear('summary', '', q.pregunta));
+    const cuerpo = crear('div', 'cuerpo');
+    let lista = null;
+    q.respuesta.forEach(p => {
+      if (p.startsWith('- ')) {
+        if (!lista) lista = cuerpo.appendChild(crear('ul'));
+        lista.appendChild(crear('li', '', p.slice(2)));
+      } else {
+        lista = null;
+        cuerpo.appendChild(crear('p', '', p));
+      }
+    });
+    if (q.modelo) {
+      const m = ASISTENCIA.modelos.find(x => x.id === q.modelo);
+      const b = crear('button', 'enlace', '📄 Ver el modelo: ' + m.titulo);
+      b.type = 'button';
+      b.addEventListener('click', () => mostrarModelo(m));
+      cuerpo.appendChild(b);
+    }
+    cuerpo.appendChild(crear('p', 'fuente', q.fuente ? 'Fuente: ' + NOMBRES_GUIA + ', apartado ' + q.fuente + '.'
+      : 'Fuente: ' + NOMBRES_GUIA + '.'));
+    det.appendChild(cuerpo);
+    return det;
+  }
+  function tarjetaModelo(m) {
+    const det = crear('details', 'respuesta');
+    det.id = 'modelo-' + m.id;
+    det.appendChild(crear('summary', '', '📄 ' + m.titulo));
+    const cuerpo = crear('div', 'cuerpo');
+    cuerpo.appendChild(crear('p', '', 'Copia el texto, rellena lo que va entre corchetes [ ] y preséntalo en el registro del Ayuntamiento.'));
+    cuerpo.appendChild(crear('div', 'modelo-texto', m.texto));
+    const copiar = crear('button', 'enlace', 'Copiar el texto');
+    copiar.type = 'button';
+    copiar.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(m.texto); copiar.textContent = '¡Copiado!'; }
+      catch (e) { copiar.textContent = 'Selecciona el texto y cópialo a mano'; }
+      setTimeout(() => copiar.textContent = 'Copiar el texto', 2500);
+    });
+    cuerpo.appendChild(copiar);
+    cuerpo.appendChild(crear('p', 'fuente', 'Fuente: ' + NOMBRES_GUIA + ', apartado ' + m.fuente + '.'));
+    det.appendChild(cuerpo);
+    return det;
+  }
+  function mostrarModelo(m) {
+    elegirTema('modelos');
+    const det = document.getElementById('modelo-' + m.id);
+    det.open = true;
+    det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function botonPreguntar(texto) {
+    const b = crear('button', 'enlace', texto);
+    b.type = 'button';
+    b.addEventListener('click', abrirPreguntar);
+    return b;
+  }
+  function abrirPreguntar() {
+    cajaPreguntar.hidden = false;
+    const consulta = document.getElementById('consulta').value.trim();
+    if (consulta && !formPregunta.elements.pregunta.value) formPregunta.elements.pregunta.value = consulta;
+    cajaPreguntar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  const cajaTemas = document.getElementById('temas');
+  ASISTENCIA.temas.forEach(t => {
+    const b = crear('button', 'tema', t.icono + ' ' + t.titulo);
+    b.type = 'button';
+    b.dataset.tema = t.id;
+    b.addEventListener('click', () => { elegirTema(t.id); resultados.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    cajaTemas.appendChild(b);
+  });
+  {
+    const b = crear('button', 'tema', '💬 Mi duda no está aquí');
+    b.type = 'button';
+    b.addEventListener('click', abrirPreguntar);
+    cajaTemas.appendChild(b);
+  }
+
+  function elegirTema(id) {
+    const t = ASISTENCIA.temas.find(x => x.id === id);
+    cajaTemas.querySelectorAll('.tema').forEach(b => b.classList.toggle('activo', b.dataset.tema === id));
+    resultados.innerHTML = '';
+    resultados.appendChild(crear('h2', '', t.icono + ' ' + t.titulo));
+    ASISTENCIA.preguntas.filter(q => q.tema === id).forEach(q => resultados.appendChild(tarjeta(q, false)));
+    if (id === 'modelos') ASISTENCIA.modelos.forEach(m => resultados.appendChild(tarjetaModelo(m)));
+    const pie = crear('p', 'pista', '¿No está tu duda? ');
+    pie.appendChild(botonPreguntar('Pregúntale a Chema'));
+    resultados.appendChild(pie);
+  }
+
+  document.getElementById('buscador').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const texto = document.getElementById('consulta').value.trim();
+    if (!texto) return;
+    cajaTemas.querySelectorAll('.tema').forEach(b => b.classList.remove('activo'));
+    resultados.innerHTML = '';
+    // La guía es solo de gatos: con un perro, solo vale lo de denunciar maltrato; lo demás va a Chema.
+    const dePerro = /\b(perr[oa]s?|cachorros? de perro)\b/i.test(texto.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    const encontradas = buscar(texto).filter(q => !dePerro || q.tema === 'maltrato');
+    if (dePerro) {
+      const caja = crear('div', 'sin-respuesta');
+      caja.appendChild(crear('p', '', 'La guía de Asistencia es de gatos y colonias felinas: para dudas sobre perros, ' +
+        'pregúntale directamente a Chema.' + (encontradas.length ? ' Si es un maltrato, esto te sirve igual:' : '')));
+      caja.appendChild(botonPreguntar('Pregúntale a Chema'));
+      resultados.appendChild(caja);
+      formPregunta.querySelector('input[name=animal][value=Perro]').checked = true;
+      encontradas.forEach((q, i) => resultados.appendChild(tarjeta(q, i === 0)));
+      return;
+    }
+    if (!encontradas.length) {
+      const caja = crear('div', 'sin-respuesta');
+      caja.appendChild(crear('p', '', 'No encuentro esa duda en la guía, así que no te voy a contestar a ciegas. ' +
+        'Prueba con otras palabras, elige un tema o pregúntale directamente a Chema.'));
+      caja.appendChild(botonPreguntar('Pregúntale a Chema'));
+      resultados.appendChild(caja);
+      return;
+    }
+    resultados.appendChild(crear('h2', '', 'Esto es lo que dice la guía'));
+    encontradas.forEach((q, i) => resultados.appendChild(tarjeta(q, i === 0)));
+    const pie = crear('p', 'pista', '¿No es lo que buscabas? ');
+    pie.appendChild(botonPreguntar('Pregúntale a Chema'));
+    resultados.appendChild(pie);
+  });
+
+  preparar(formPregunta, {
+    funcion: 'enviarPregunta',
+    textoBoton: 'Enviar mi duda',
+    recogerDatos: () => recoger(formPregunta, ['web', 'pregunta', 'nombre', 'provincia', 'contacto'], ['animal'], []),
+    falta: d => {
+      if (!d.pregunta) return 'Escribe tu duda.';
+      if (!d.contacto) return 'Déjanos un email o un teléfono para poder contestarte.';
+      if (!d.consentimiento) return 'Tienes que aceptar que guardemos tus datos para poder contestarte.';
       return '';
     },
   });
