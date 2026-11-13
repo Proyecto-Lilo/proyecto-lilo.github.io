@@ -132,6 +132,25 @@
       border: 1px solid var(--borde); border-radius: 10px; padding: 12px; max-height: 360px; overflow: auto; }
     .sin-respuesta { background: #fff8ef; border: 1px solid var(--borde); border-radius: 14px; padding: 14px; margin: 0 0 12px; }
     .preguntar { margin-top: 18px; }
+    /* Ficha del caso */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 0 16px; }
+    .chip { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 999px; padding: 4px 10px; font-size: 14px; }
+    .chip.urgente { border-color: #f3c4bd; background: #fdecea; color: #7a2418; }
+    .estado-caja { background: var(--tarjeta); border: 2px solid var(--acento); border-radius: 16px; padding: 14px 16px; margin: 0 0 16px; text-align: center; }
+    .estado-caja .grande { font-size: 22px; font-weight: 800; color: var(--acento-oscuro); }
+    .estado-caja.libre { border-color: var(--verde); }
+    .estado-caja.libre .grande { color: var(--verde); }
+    .yo { color: var(--suave); font-size: 14px; text-align: center; margin: -8px 0 16px; }
+    .secundario { background: transparent; color: var(--acento); border: 1px solid var(--acento); }
+    .secundario:hover { background: #fdf1e6; }
+    .peligro { background: transparent; color: var(--rojo); border: 1px solid var(--rojo); font-size: 15px; padding: 11px; }
+    .peligro:hover { background: #fdecea; }
+    .aviso-texto { white-space: pre-wrap; font: 14px/1.5 ui-monospace, Menlo, monospace; background: #fffaf3;
+      border: 1px solid var(--borde); border-radius: 10px; padding: 12px; max-height: 420px; overflow: auto; }
+    .historial { list-style: none; margin: 0; padding: 0; }
+    .historial li { border-left: 3px solid var(--acento); padding: 4px 0 10px 12px; margin-left: 4px; }
+    .historial .cuando { color: var(--suave); font-size: 13px; }
+    .ok { color: var(--verde); text-align: center; margin: 10px 0 0; }
   </style>
 </head>
 <body>
@@ -412,6 +431,57 @@
     </section>
   </section>
 
+  <!-- ============================================================= CASO -->
+  <section id="caso" hidden>
+    <h1 id="casoTitulo">Caso</h1>
+    <p class="intro" id="casoCargando">Cargando el caso…</p>
+    <p class="error" id="casoError" role="alert"></p>
+    <div id="casoFicha" hidden>
+      <div class="chips" id="casoChips"></div>
+      <div class="estado-caja" id="casoEstado"></div>
+      <p class="yo" id="casoYo"></p>
+
+      <fieldset id="bloqueQuedarse" hidden>
+        <legend id="tituloQuedarse">¿Podéis ir vosotros?</legend>
+        <p class="pista" style="margin:0 0 12px">Al quedaros el caso, el resto de asociaciones de la zona sabrán que os
+          encargáis y veréis el contacto de quien avisó.</p>
+        <label class="campo"><span class="titulo">Nota <small>(opcional)</small></span>
+          <input type="text" id="notaQuedarse" placeholder="Vamos esta tarde, ya hemos llamado…"></label>
+        <button type="button" id="btnQuedarse">🐾 Vamos nosotros</button>
+      </fieldset>
+
+      <fieldset id="bloqueEstado" hidden>
+        <legend>Actualizar el caso</legend>
+        <label class="campo"><span class="titulo">Estado</span>
+          <select id="selEstado"></select></label>
+        <label class="campo"><span class="titulo">Qué ha pasado <small>(opcional)</small></span>
+          <textarea id="notaEstado" placeholder="Lo hemos recogido, está en el veterinario…"></textarea></label>
+        <button type="button" id="btnEstado">Guardar</button>
+        <p style="margin:14px 0 6px"><button type="button" class="peligro" id="btnSoltar">No podemos ir: soltar el caso</button></p>
+      </fieldset>
+
+      <fieldset id="bloqueAyudar" hidden>
+        <legend>¿Podéis echar una mano?</legend>
+        <p class="pista" style="margin:0 0 12px">Le llegará a quien lleva el caso, con vuestro contacto.</p>
+        <label class="campo"><span class="titulo">Con qué podéis ayudar</span>
+          <textarea id="notaAyudar" placeholder="Tenemos una acogida libre, podemos llevarlo al veterinario…"></textarea></label>
+        <button type="button" class="secundario" id="btnAyudar">🤝 Podemos ayudar</button>
+      </fieldset>
+      <p class="ok" id="casoOk" role="status"></p>
+
+      <fieldset>
+        <legend>Historial</legend>
+        <ul class="historial" id="casoHistorial"></ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>El aviso</legend>
+        <div class="aviso-texto" id="casoAviso"></div>
+        <p style="margin:12px 0"><a id="casoCarpeta" target="_blank" rel="noopener">Abrir la carpeta del caso en Drive (fotos)</a></p>
+      </fieldset>
+    </div>
+  </section>
+
   <!-- ======================================================== ASOCIACIONES -->
   <section id="asociaciones" hidden>
     <h1>Asociaciones</h1>
@@ -492,9 +562,10 @@
   // Si cambian las provincias en Codigo.gs, cámbialas aquí también.
   const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
   const COMUNIDADES = {"Andalucía": ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"], "Aragón": ["Huesca", "Teruel", "Zaragoza"], "Asturias": ["Asturias"], "Islas Baleares": ["Islas Baleares"], "Canarias": ["Las Palmas", "Santa Cruz de Tenerife"], "Cantabria": ["Cantabria"], "Castilla-La Mancha": ["Albacete", "Ciudad Real", "Cuenca", "Guadalajara", "Toledo"], "Castilla y León": ["Ávila", "Burgos", "León", "Palencia", "Salamanca", "Segovia", "Soria", "Valladolid", "Zamora"], "Cataluña": ["Barcelona", "Girona", "Lleida", "Tarragona"], "Comunidad Valenciana": ["Alicante", "Castellón", "Valencia"], "Extremadura": ["Badajoz", "Cáceres"], "Galicia": ["A Coruña", "Lugo", "Ourense", "Pontevedra"], "Madrid": ["Madrid"], "Murcia": ["Murcia"], "Navarra": ["Navarra"], "País Vasco": ["Álava", "Bizkaia", "Gipuzkoa"], "La Rioja": ["La Rioja"], "Ceuta": ["Ceuta"], "Melilla": ["Melilla"], "Fuera de España": ["Fuera de España"]};
-  const SECCIONES = ['rescates', 'asistencia', 'asociaciones'];
+  const SECCIONES = ['rescates', 'asistencia', 'asociaciones', 'caso'];
   const pedida = new URLSearchParams(location.search).get('seccion');
-  const SECCION = SECCIONES.includes(pedida) ? pedida : 'rescates';
+  const PARAMS = new URLSearchParams(location.search);
+  const SECCION = PARAMS.get('caso') ? 'caso' : (SECCIONES.includes(pedida) && pedida !== 'caso' ? pedida : 'rescates');
 
   /* ---------- Pestañas */
   function mostrar(seccion) {
@@ -900,6 +971,87 @@
     pie.appendChild(botonPreguntar('Pregúntale a Chema'));
     resultados.appendChild(pie);
   });
+
+  /* ---------- Ficha del caso (enlaces de los correos: ?caso=L-0031&a=…&t=… o &chema=…) */
+  if (SECCION === 'caso') {
+    const credencial = { caso: PARAMS.get('caso'), a: PARAMS.get('a') || '', t: PARAMS.get('t') || '',
+      chema: PARAMS.get('chema') || '' };
+    const $ = id => document.getElementById(id);
+    const casoError = $('casoError'), casoOk = $('casoOk');
+    const pintarCaso = (r) => {
+      const c = r.caso;
+      $('casoCargando').hidden = true;
+      $('casoFicha').hidden = false;
+      $('casoTitulo').textContent = 'Caso ' + c.id;
+      document.title = 'Proyecto Lilo · Caso ' + c.id;
+      const chips = $('casoChips');
+      chips.innerHTML = '';
+      [[(c.animal === 'Perro' ? '🐕 ' : '🐈 ') + c.animal], ['📍 ' + c.municipio + ' (' + c.provincia + ')'],
+       [c.urgencia, c.urgencia === 'EMERGENCIA' || c.urgencia === 'Urgente' ? 'urgente' : ''], ['Aviso: ' + c.recibido]]
+        .forEach(([texto, clase]) => { if (texto) chips.appendChild(crear('span', 'chip' + (clase ? ' ' + clase : ''), texto)); });
+      const caja = $('casoEstado');
+      caja.innerHTML = '';
+      caja.classList.toggle('libre', c.estado === 'Nuevo');
+      caja.appendChild(crear('div', 'grande', c.estado === 'Nuevo' ? 'Libre: nadie se lo ha quedado' : c.estado));
+      if (c.responsable) caja.appendChild(crear('div', '', 'Lo lleva: ' + c.responsable));
+      $('casoYo').textContent = 'Estás viendo el caso como ' + (r.yo.rol === 'chema' ? 'Chema' : r.yo.nombre) +
+        (r.yo.rol === 'responsable' ? ' (lo lleváis vosotros)' : '') + '.';
+      $('bloqueQuedarse').hidden = !r.puede.quedarse;
+      $('tituloQuedarse').textContent = r.yo.rol === 'chema' ? '¿Te lo quedas tú?' : '¿Podéis ir vosotros?';
+      $('btnQuedarse').textContent = r.yo.rol === 'chema' ? '🐾 Me encargo yo' : '🐾 Vamos nosotros';
+      $('bloqueEstado').hidden = !r.puede.cambiarEstado;
+      $('btnSoltar').hidden = !r.puede.soltar;
+      const sel = $('selEstado');
+      sel.innerHTML = '';
+      r.estados.forEach(e => sel.appendChild(new Option(e, e, false, e === c.estado)));
+      $('bloqueAyudar').hidden = !r.puede.ayudar;
+      const lista = $('casoHistorial');
+      lista.innerHTML = '';
+      if (!r.historial.length) lista.appendChild(crear('li', '', 'Todavía no ha pasado nada en este caso.'));
+      r.historial.forEach(h => {
+        const li = crear('li');
+        li.appendChild(crear('div', 'cuando', h.fecha + ' · ' + h.quien));
+        li.appendChild(crear('div', '', h.que + (h.estado ? ': ' + h.estado : '')));
+        if (h.texto) li.appendChild(crear('div', 'pista', '«' + h.texto + '»'));
+        lista.appendChild(li);
+      });
+      $('casoAviso').textContent = c.aviso || 'No hemos podido leer el aviso.';
+      $('casoCarpeta').href = c.carpeta;
+    };
+    const cargarCaso = () => llamar('verCaso', credencial).then(pintarCaso, err => {
+      $('casoCargando').hidden = true;
+      casoError.textContent = (err && err.message) || 'No se pudo abrir el caso.';
+    });
+    // Las acciones no se reintentan solas: si fallan, la persona lo vuelve a intentar.
+    const accion = async (boton, datos, mensaje) => {
+      casoError.textContent = ''; casoOk.textContent = '';
+      const texto = boton.textContent;
+      boton.disabled = true; boton.textContent = 'Guardando…';
+      try {
+        pintarCaso(await llamarUnaVez('accionCaso', Object.assign({}, credencial, datos)));
+        casoOk.textContent = mensaje;
+      } catch (err) {
+        casoError.textContent = (err && err.message) || 'No se pudo guardar. Inténtalo otra vez.';
+        cargarCaso();
+      } finally {
+        boton.disabled = false; boton.textContent = texto;
+      }
+    };
+    $('btnQuedarse').addEventListener('click', e => accion(e.target, { accion: 'quedarse', texto: $('notaQuedarse').value },
+      '¡Hecho! El caso es vuestro y el resto de asociaciones ya lo saben.'));
+    $('btnEstado').addEventListener('click', e => accion(e.target, { accion: 'estado', estado: $('selEstado').value,
+      texto: $('notaEstado').value }, 'Guardado. Chema ya está avisado.').then(() => { $('notaEstado').value = ''; }));
+    $('btnSoltar').addEventListener('click', e => {
+      if (!confirm('¿Seguro que no podéis ir? El caso quedará libre para otra asociación.')) return;
+      accion(e.target, { accion: 'soltar', texto: $('notaEstado').value }, 'El caso vuelve a estar libre.');
+    });
+    $('btnAyudar').addEventListener('click', e => {
+      if (!$('notaAyudar').value.trim()) { casoError.textContent = 'Escribe con qué podéis ayudar.'; return; }
+      accion(e.target, { accion: 'ayudar', texto: $('notaAyudar').value }, 'Enviado a quien lleva el caso. ¡Gracias!')
+        .then(() => { $('notaAyudar').value = ''; });
+    });
+    cargarCaso();
+  }
 
   preparar(formPregunta, {
     funcion: 'enviarPregunta',
