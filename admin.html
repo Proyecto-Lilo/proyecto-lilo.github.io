@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Proyecto Lilo · Administración</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { --fondo: #fbf6ef; --tarjeta: #fff; --texto: #2b2420; --suave: #7a6e66; --borde: #e6dccf;
+      --acento: #d9772b; --acento-oscuro: #b45f1d; --rojo: #c8412f; --verde: #3f8a55; --azul: #2f6fb3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    header { background: var(--tarjeta); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 1000; }
+    .barra { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .marca { font-weight: 800; font-size: 18px; }
+    .marca small { font-weight: 400; color: var(--suave); }
+    .actualizado { color: var(--suave); font-size: 13px; margin-left: auto; }
+    nav { max-width: 1200px; margin: 0 auto; padding: 0 16px 8px; display: flex; gap: 6px; overflow-x: auto; }
+    nav button { flex: none; }
+    main { max-width: 1200px; margin: 0 auto; padding: 16px 16px 64px; }
+    button, .boton { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--borde); background: var(--tarjeta);
+      color: var(--texto); padding: 8px 12px; text-decoration: none; display: inline-block; }
+    button:hover, .boton:hover { border-color: var(--acento); }
+    nav button.activa { background: var(--acento); border-color: var(--acento); color: #fff; }
+    .primario { background: var(--acento); border-color: var(--acento); color: #fff; }
+    .peligro { color: var(--rojo); border-color: #f0c2bb; }
+    .exito { color: var(--verde); border-color: #bcdcc4; }
+    button:disabled { opacity: .6; cursor: wait; }
+    h2 { font-size: 20px; margin: 4px 0 12px; }
+    h3 { font-size: 16px; margin: 18px 0 8px; }
+    .cifras { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .cifra { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; }
+    .cifra .n { font-size: 28px; font-weight: 800; line-height: 1.1; }
+    .cifra .t { color: var(--suave); font-size: 13px; }
+    .cifra.roja .n { color: var(--rojo); } .cifra.verde .n { color: var(--verde); } .cifra.azul .n { color: var(--azul); }
+    .bloque { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; margin: 12px 0; }
+    .barras .fila { display: grid; grid-template-columns: 140px 1fr 36px; gap: 8px; align-items: center; margin: 4px 0; font-size: 14px; }
+    .barras .barra-v { height: 12px; background: #f3e4d4; border-radius: 6px; overflow: hidden; }
+    .barras .barra-v span { display: block; height: 100%; background: var(--acento); }
+    .dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 760px) { .dos-col { grid-template-columns: 1fr; } .barras .fila { grid-template-columns: 110px 1fr 30px; } }
+    #mapa { height: 70vh; min-height: 380px; border-radius: 14px; border: 1px solid var(--borde); }
+    .leyenda { display: flex; gap: 14px; flex-wrap: wrap; margin: 0 0 10px; font-size: 14px; align-items: center; }
+    .punto { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+    .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+    .filtros input, .filtros select { font: inherit; padding: 8px 10px; border: 1px solid var(--borde); border-radius: 10px; background: #fff; }
+    .filtros input { flex: 1 1 200px; }
+    .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+    .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; }
+    .tarjeta .titulo { font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+    .tarjeta .meta { color: var(--suave); font-size: 13px; }
+    .tarjeta .acciones { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .chip { font-size: 12px; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--borde); white-space: nowrap; }
+    .chip.Nuevo { background: #fdecea; color: #7a2418; border-color: #f3c4bd; }
+    .chip.pendiente { background: #fff4e5; color: #8a4b08; border-color: #f5d7a8; }
+    .chip.cerrado { background: #e9f5ec; color: #23573a; border-color: #bcdcc4; }
+    .chip.aprobada { background: #e8f0fa; color: #1f4f85; border-color: #bcd2ee; }
+    .chip.baja { background: #f1f1f1; color: #666; }
+    .actividad li { margin: 0 0 10px; list-style: none; border-left: 3px solid var(--acento); padding-left: 10px; }
+    .actividad ul { padding: 0; margin: 0; }
+    .aviso { background: #fff8ef; border: 1px solid var(--borde); border-radius: 12px; padding: 10px 14px; margin: 0 0 12px; }
+    .error { background: #fdecea; border: 1px solid #f3c4bd; color: #7a2418; border-radius: 12px; padding: 10px 14px; margin: 0 0 12px; }
+    .vacio { color: var(--suave); }
+    .leaflet-popup-content { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .leaflet-popup-content a { color: var(--acento-oscuro); }
+    .leaflet-popup-content b { font-size: 15px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <span class="marca">🐾 Proyecto Lilo <small>· Administración</small></span>
+    <span class="actualizado" id="actualizado"></span>
+    <button id="recargar">↻ Actualizar</button>
+  </div>
+  <nav id="pestanas">
+    <button data-s="resumen" class="activa">Resumen</button>
+    <button data-s="mapa">Mapa</button>
+    <button data-s="casos">Casos</button>
+    <button data-s="asociaciones">Asociaciones</button>
+    <button data-s="actividad">Actividad</button>
+    <button data-s="herramientas">Herramientas</button>
+  </nav>
+</header>
+<main>
+  <div id="mensaje"></div>
+  <p id="cargando" class="vacio">Cargando datos…</p>
+
+  <section id="resumen" hidden>
+    <div class="cifras" id="cifras"></div>
+    <div class="dos-col">
+      <div class="bloque"><h3>Necesitan atención</h3><div id="atencion"></div></div>
+      <div class="bloque"><h3>Casos por estado</h3><div class="barras" id="porEstado"></div></div>
+    </div>
+    <div class="dos-col">
+      <div class="bloque"><h3>Casos por provincia</h3><div class="barras" id="porProvincia"></div></div>
+      <div class="bloque"><h3>Asociaciones por comunidad</h3><div class="barras" id="asocPorComunidad"></div></div>
+    </div>
+  </section>
+
+  <section id="mapa-sec" hidden>
+    <div class="leyenda">
+      <label><input type="checkbox" id="verPendientes" checked> <span class="punto" style="background:#c8412f"></span>Rescates pendientes</label>
+      <label><input type="checkbox" id="verCerrados"> <span class="punto" style="background:#8a8a8a"></span>Casos cerrados</label>
+      <label><input type="checkbox" id="verAsociaciones" checked> <span class="punto" style="background:#2f6fb3"></span>Asociaciones</label>
+      <span class="vacio" id="geoEstado"></span>
+    </div>
+    <div id="mapa"></div>
+    <p class="vacio" style="font-size:13px">Toca un punto para ver su información. Los casos se colocan en su municipio y las
+      asociaciones en el centro de cada provincia donde actúan.</p>
+  </section>
+
+  <section id="casos" hidden>
+    <div class="filtros">
+      <input type="search" id="buscaCaso" placeholder="Buscar: caso, municipio, asociación…">
+      <select id="filtroEstado"><option value="">Todos los estados</option><option value="__pend">Solo pendientes</option></select>
+      <select id="filtroAnimal"><option value="">Gatos y perros</option><option>Gato</option><option>Perro</option></select>
+      <select id="filtroProvincia"><option value="">Todas las provincias</option></select>
+    </div>
+    <p class="vacio" id="cuentaCasos"></p>
+    <div class="tarjetas" id="listaCasos"></div>
+  </section>
+
+  <section id="asociaciones" hidden>
+    <div class="filtros">
+      <input type="search" id="buscaAsoc" placeholder="Buscar: nombre, correo, provincia…">
+      <select id="filtroAsoc"><option value="">Todas</option><option value="aprobada">Dadas de alta</option>
+        <option value="pendiente">Pendientes de aprobar</option><option value="baja">Dadas de baja</option></select>
+    </div>
+    <p class="vacio" id="cuentaAsoc"></p>
+    <div class="tarjetas" id="listaAsoc"></div>
+  </section>
+
+  <section id="actividad" hidden>
+    <div class="bloque actividad"><h3>Últimos movimientos en los casos</h3><ul id="listaActividad"></ul></div>
+  </section>
+
+  <section id="herramientas" hidden>
+    <div class="bloque">
+      <h3>Acciones</h3>
+      <p><button id="btnRevisar" class="primario">Revisar casos parados ahora</button>
+        <span class="vacio">Manda ya los recordatorios que tocarían en la revisión de cada hora.</span></p>
+      <p><button id="btnCsvCasos">⬇ Descargar casos (CSV)</button> <button id="btnCsvAsoc">⬇ Descargar asociaciones (CSV)</button></p>
+    </div>
+    <div class="bloque">
+      <h3>Enlaces</h3>
+      <p id="enlaces"></p>
+    </div>
+    <div class="bloque">
+      <h3>Seguridad</h3>
+      <p class="vacio">Este enlace es solo tuyo: no lo compartas. Si se filtra, en el Apps Script borra la propiedad
+        «admin_clave» y ejecuta <code>enviarEnlaceAdmin</code>: te llegará uno nuevo y el viejo dejará de funcionar.</p>
+    </div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
+  const K = new URLSearchParams(location.search).get('k') || '';
+  const PENDIENTES = ['Nuevo', 'Asignado', 'En camino'];
+  const A_SALVO = ['Rescatado', 'En veterinario', 'En acogida', 'En adopción', 'Adoptado'];
+  // Centro aproximado de cada provincia (su capital).
+  const CENTROS = { 'Almería': [36.84, -2.46], 'Cádiz': [36.53, -6.29], 'Córdoba': [37.88, -4.78], 'Granada': [37.18, -3.6],
+    'Huelva': [37.26, -6.95], 'Jaén': [37.78, -3.79], 'Málaga': [36.72, -4.42], 'Sevilla': [37.39, -5.98], 'Huesca': [42.14, -0.41],
+    'Teruel': [40.34, -1.11], 'Zaragoza': [41.65, -0.89], 'Asturias': [43.36, -5.85], 'Islas Baleares': [39.57, 2.65],
+    'Las Palmas': [28.12, -15.43], 'Santa Cruz de Tenerife': [28.46, -16.25], 'Cantabria': [43.46, -3.81], 'Albacete': [38.99, -1.86],
+    'Ciudad Real': [38.99, -3.93], 'Cuenca': [40.07, -2.13], 'Guadalajara': [40.63, -3.17], 'Toledo': [39.86, -4.03],
+    'Ávila': [40.66, -4.7], 'Burgos': [42.34, -3.7], 'León': [42.6, -5.57], 'Palencia': [42.01, -4.53], 'Salamanca': [40.97, -5.66],
+    'Segovia': [40.95, -4.12], 'Soria': [41.76, -2.46], 'Valladolid': [41.65, -4.72], 'Zamora': [41.5, -5.74],
+    'Barcelona': [41.39, 2.17], 'Girona': [41.98, 2.82], 'Lleida': [41.62, 0.62], 'Tarragona': [41.12, 1.25],
+    'Alicante': [38.35, -0.48], 'Castellón': [39.99, -0.05], 'Valencia': [39.47, -0.38], 'Badajoz': [38.88, -6.97],
+    'Cáceres': [39.48, -6.37], 'A Coruña': [43.36, -8.41], 'Lugo': [43.01, -7.56], 'Ourense': [42.34, -7.86],
+    'Pontevedra': [42.43, -8.64], 'Madrid': [40.42, -3.7], 'Murcia': [37.99, -1.13], 'Navarra': [42.81, -1.64],
+    'Álava': [42.85, -2.67], 'Bizkaia': [43.26, -2.93], 'Gipuzkoa': [43.32, -1.98], 'La Rioja': [42.47, -2.45],
+    'Ceuta': [35.89, -5.32], 'Melilla': [35.29, -2.94] };
+  const COMUNIDAD_DE = {};
+  Object.entries({ 'Andalucía': ['Almería', 'Cádiz', 'Córdoba', 'Granada', 'Huelva', 'Jaén', 'Málaga', 'Sevilla'],
+    'Aragón': ['Huesca', 'Teruel', 'Zaragoza'], 'Asturias': ['Asturias'], 'Islas Baleares': ['Islas Baleares'],
+    'Canarias': ['Las Palmas', 'Santa Cruz de Tenerife'], 'Cantabria': ['Cantabria'],
+    'Castilla-La Mancha': ['Albacete', 'Ciudad Real', 'Cuenca', 'Guadalajara', 'Toledo'],
+    'Castilla y León': ['Ávila', 'Burgos', 'León', 'Palencia', 'Salamanca', 'Segovia', 'Soria', 'Valladolid', 'Zamora'],
+    'Cataluña': ['Barcelona', 'Girona', 'Lleida', 'Tarragona'], 'Comunidad Valenciana': ['Alicante', 'Castellón', 'Valencia'],
+    'Extremadura': ['Badajoz', 'Cáceres'], 'Galicia': ['A Coruña', 'Lugo', 'Ourense', 'Pontevedra'], 'Madrid': ['Madrid'],
+    'Murcia': ['Murcia'], 'Navarra': ['Navarra'], 'País Vasco': ['Álava', 'Bizkaia', 'Gipuzkoa'], 'La Rioja': ['La Rioja'],
+    'Ceuta': ['Ceuta'], 'Melilla': ['Melilla'] }).forEach(([c, ps]) => ps.forEach(p => COMUNIDAD_DE[p] = c));
+
+  let D = null;
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const tipoEstado = e => e === 'Nuevo' ? 'Nuevo' : PENDIENTES.includes(e) ? 'pendiente' : 'cerrado';
+  const chipEstado = e => `<span class="chip ${tipoEstado(e)}">${esc(e === 'Nuevo' ? 'Nuevo · sin asignar' : e)}</span>`;
+  const telLimpio = t => { let n = String(t || '').replace(/[^0-9+]/g, ''); if (n.startsWith('00')) n = '+' + n.slice(2);
+    if (!n.startsWith('+') && n.length === 9) n = '+34' + n; return n; };
+
+  function mostrarMensaje(texto, error) {
+    $('mensaje').innerHTML = texto ? `<div class="${error ? 'error' : 'aviso'}">${esc(texto)}</div>` : '';
+  }
+  async function llamar(funcion, datos) {
+    const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify({ funcion, datos: Object.assign({ k: K }, datos || {}) }) });
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error((j && j.error) || 'No se pudo conectar.');
+    return j;
+  }
+
+  /* ---------- Pestañas */
+  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas' };
+  function ir(s) {
+    Object.entries(SECCIONES).forEach(([k, id]) => $(id).hidden = !D || k !== s);
+    document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.s === s));
+    if (s === 'mapa' && D) {
+      const primera = !mapa;
+      pintarMapa();
+      setTimeout(() => { mapa.invalidateSize(); if (primera) mapa.fitBounds([[36.0, -9.4], [43.8, 3.3]]); }, 60);
+    }
+    try { localStorage.setItem('lilo_admin_s', s); } catch (e) {}
+  }
+  document.querySelectorAll('#pestanas button').forEach(b => b.addEventListener('click', () => ir(b.dataset.s)));
+
+  /* ---------- Resumen */
+  function barras(id, pares, max) {
+    const tope = max || Math.max(1, ...pares.map(p => p[1]));
+    $(id).innerHTML = pares.length ? pares.map(([t, n]) => `<div class="fila"><span>${esc(t)}</span>
+      <span class="barra-v"><span style="width:${Math.round(n / tope * 100)}%"></span></span><b>${n}</b></div>`).join('')
+      : '<p class="vacio">Sin datos.</p>';
+  }
+  function contar(lista, clave) {
+    const m = {}; lista.forEach(x => { const k = typeof clave === 'function' ? clave(x) : x[clave]; [].concat(k).forEach(v => m[v] = (m[v] || 0) + 1); });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }
+  function pintarResumen() {
+    const c = D.casos, a = D.asociaciones;
+    const semana = Date.now() - 7 * 864e5;
+    const cifras = [
+      ['Casos en total', c.length, ''], ['Pendientes', c.filter(x => PENDIENTES.includes(x.estado)).length, 'roja'],
+      ['Sin asignar', c.filter(x => x.estado === 'Nuevo').length, 'roja'], ['A salvo', c.filter(x => A_SALVO.includes(x.estado)).length, 'verde'],
+      ['Últimos 7 días', c.filter(x => x.ts > semana).length, ''], ['Perros', c.filter(x => x.animal === 'Perro').length, ''],
+      ['Asociaciones activas', a.filter(x => x.estado === 'aprobada').length, 'azul'],
+      ['Por aprobar', a.filter(x => x.estado === 'pendiente').length, a.some(x => x.estado === 'pendiente') ? 'roja' : ''],
+    ];
+    $('cifras').innerHTML = cifras.map(([t, n, cl]) => `<div class="cifra ${cl}"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
+    barras('porEstado', contar(c, 'estado'));
+    barras('porProvincia', contar(c, 'provincia').slice(0, 12));
+    barras('asocPorComunidad', contar(a.filter(x => x.estado === 'aprobada'), x => [...new Set(x.provincias.map(p => COMUNIDAD_DE[p] || p))]).slice(0, 12));
+    const ahora = Date.now();
+    const sinNadie = c.filter(x => x.estado === 'Nuevo' && ahora - x.ts > 864e5);
+    const porAprobar = a.filter(x => x.estado === 'pendiente');
+    const urgentes = c.filter(x => x.estado === 'Nuevo' && /EMERGENCIA|Urgente/.test(x.urgencia));
+    const items = [];
+    porAprobar.forEach(x => items.push(`🤝 <b>${esc(x.nombre)}</b> espera aprobación (${esc(x.provincias.join(', '))})`));
+    urgentes.forEach(x => items.push(`🚨 <a href="${esc(x.ficha)}" target="_blank" rel="noopener">${esc(x.caso)}</a> · ${esc(x.urgencia)} sin asignar · ${esc(x.municipio)} (${esc(x.provincia)})`));
+    sinNadie.filter(x => !urgentes.includes(x)).forEach(x => items.push(`⏳ <a href="${esc(x.ficha)}" target="_blank" rel="noopener">${esc(x.caso)}</a> · más de 24 h sin asociación · ${esc(x.municipio)} (${esc(x.provincia)})`));
+    $('atencion').innerHTML = items.length ? items.map(i => `<div style="margin:0 0 6px">${i}</div>`).join('') : '<p class="vacio">Todo en orden. 🎉</p>';
+  }
+
+  /* ---------- Casos */
+  function pintarCasos() {
+    const q = $('buscaCaso').value.toLowerCase().trim(), est = $('filtroEstado').value, an = $('filtroAnimal').value, pr = $('filtroProvincia').value;
+    const lista = D.casos.filter(x => (!est || (est === '__pend' ? PENDIENTES.includes(x.estado) : x.estado === est)) &&
+      (!an || x.animal === an) && (!pr || x.provincia === pr) &&
+      (!q || [x.caso, x.municipio, x.provincia, x.responsable, x.estado, x.senales].join(' ').toLowerCase().includes(q)));
+    $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos';
+    $('listaCasos').innerHTML = lista.map(x => `<div class="tarjeta">
+      <div class="titulo"><span>${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}</div>
+      <div>${esc(x.municipio)} (${esc(x.provincia)}) · <b>${esc(x.urgencia)}</b></div>
+      <div class="meta">Aviso: ${esc(x.fecha)} · Última novedad: ${esc(x.novedad || '—')}</div>
+      <div class="meta">${x.responsable ? 'Lo lleva: <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}${x.senales ? ' · ' + esc(x.senales) : ''}</div>
+      ${x.redes === 'Sí' ? '<div class="meta">📣 Permiso para redes</div>' : ''}
+      <div class="acciones"><a class="boton primario" href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>
+        <a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a></div></div>`).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
+  }
+
+  /* ---------- Asociaciones */
+  function pintarAsociaciones() {
+    const q = $('buscaAsoc').value.toLowerCase().trim(), est = $('filtroAsoc').value;
+    const lista = D.asociaciones.filter(x => (!est || x.estado === est) &&
+      (!q || [x.nombre, x.email, x.contacto, x.provincias.join(' '), x.telefono].join(' ').toLowerCase().includes(q)));
+    $('cuentaAsoc').textContent = lista.length + ' de ' + D.asociaciones.length + ' asociaciones';
+    const nombres = { aprobada: 'Dada de alta', pendiente: 'Pendiente', baja: 'De baja' };
+    $('listaAsoc').innerHTML = lista.map(x => {
+      const tel = telLimpio(x.telefono);
+      return `<div class="tarjeta">
+      <div class="titulo"><span>${esc(x.nombre)}</span><span class="chip ${x.estado === 'aprobada' ? 'aprobada' : x.estado === 'baja' ? 'baja' : 'pendiente'}">${nombres[x.estado] || esc(x.estado)}</span></div>
+      <div class="meta">${esc(x.contacto)} · se apuntó el ${esc(x.fecha)}</div>
+      <div>📞 <a href="tel:${esc(tel)}">${esc(x.telefono)}</a> · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a></div>
+      <div>✉️ <a href="mailto:${esc(x.email)}">${esc(x.email)}</a></div>
+      <div class="meta">📍 ${esc(x.provincias.join(', '))}</div>
+      <div class="meta">🐾 ${esc(x.animales.join(' y '))}${x.ayuda.length ? ' · Ayuda: ' + esc(x.ayuda.join(', ')) : ''}</div>
+      ${x.redes ? `<div class="meta">🌐 ${esc(x.redes)}</div>` : ''}${x.comentarios ? `<div class="meta">💬 ${esc(x.comentarios)}</div>` : ''}
+      <div class="acciones">${x.estado === 'aprobada'
+        ? `<button class="peligro" data-accion="baja" data-id="${esc(x.id)}">Dar de baja</button>`
+        : `<button class="exito" data-accion="aprobar" data-id="${esc(x.id)}">Dar de alta</button>`}</div></div>`;
+    }).join('') || '<p class="vacio">No hay asociaciones con esos filtros.</p>';
+  }
+  $('listaAsoc').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-accion]');
+    if (!b) return;
+    const a = D.asociaciones.find(x => x.id === b.dataset.id);
+    const alta = b.dataset.accion === 'aprobar';
+    if (!confirm(alta ? `¿Dar de alta a «${a.nombre}»? Recibirá los avisos de ${a.provincias.join(', ')}, verá sus carpetas y le llegará el correo de bienvenida.`
+      : `¿Dar de baja a «${a.nombre}»? Dejará de recibir avisos y de ver las carpetas.`)) return;
+    b.disabled = true; b.textContent = 'Guardando…';
+    try {
+      const r = await llamar('adminAsociacion', { id: a.id, accion: b.dataset.accion });
+      D = r; pintarTodo(); mostrarMensaje(r.mensaje);
+    } catch (err) { mostrarMensaje(err.message, true); b.disabled = false; b.textContent = alta ? 'Dar de alta' : 'Dar de baja'; }
+  });
+
+  /* ---------- Actividad y herramientas */
+  function pintarActividad() {
+    $('listaActividad').innerHTML = D.historial.map(h => {
+      const c = D.casos.find(x => x.caso === h.caso);
+      return `<li><div class="meta">${esc(h.fecha)} · ${esc(h.quien)}</div>
+        <div>${c ? `<a href="${esc(c.ficha)}" target="_blank" rel="noopener">${esc(h.caso)}</a>` : esc(h.caso)} · ${esc(h.que)}${h.estado ? ': <b>' + esc(h.estado) + '</b>' : ''}</div>
+        ${h.texto ? `<div class="meta">«${esc(h.texto)}»</div>` : ''}</li>`;
+    }).join('') || '<p class="vacio">Todavía no hay movimientos.</p>';
+    const e = D.enlaces;
+    $('enlaces').innerHTML = [[e.hoja, '📊 Hoja de registro'], [e.drive, '📁 Carpeta de Proyecto Lilo en Drive'], [e.web, '🌐 Web de rescates'],
+      [e.asociaciones, '🤝 Formulario de asociaciones'], [e.canal, '📣 Canal de WhatsApp']]
+      .map(([u, t]) => `<a class="boton" style="margin:0 6px 6px 0" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('');
+  }
+  $('btnRevisar').addEventListener('click', async e => {
+    e.target.disabled = true;
+    try { mostrarMensaje((await llamar('adminRevisar')).mensaje); } catch (err) { mostrarMensaje(err.message, true); }
+    e.target.disabled = false;
+  });
+  function csv(nombre, filas) {
+    const texto = '﻿' + filas.map(f => f.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }));
+    a.download = nombre; a.click();
+  }
+  $('btnCsvCasos').addEventListener('click', () => csv('proyecto-lilo-casos.csv', [['Caso', 'Fecha', 'Animal', 'Comunidad', 'Provincia', 'Municipio',
+    'Urgencia', 'Estado', 'Responsable', 'Última novedad', 'Señales', 'Permiso redes', 'Carpeta']].concat(D.casos.map(x =>
+    [x.caso, x.fecha, x.animal, x.comunidad, x.provincia, x.municipio, x.urgencia, x.estado, x.responsable, x.novedad, x.senales, x.redes, x.carpeta]))));
+  $('btnCsvAsoc').addEventListener('click', () => csv('proyecto-lilo-asociaciones.csv', [['Asociación', 'Estado', 'Contacto', 'Correo', 'Teléfono',
+    'Provincias', 'Animales', 'Ayuda', 'Web o redes', 'Se apuntó']].concat(D.asociaciones.map(x =>
+    [x.nombre, x.estado, x.contacto, x.email, x.telefono, x.provincias.join(', '), x.animales.join(', '), x.ayuda.join(', '), x.redes, x.fecha]))));
+
+  /* ---------- Mapa */
+  let mapa = null, capas = null;
+  const hash = t => { let h = 0; for (const ch of String(t)) h = (h * 31 + ch.charCodeAt(0)) | 0; return h; };
+  const desplazar = (c, semilla, r) => { const ang = (Math.abs(semilla) % 360) * Math.PI / 180, d = r * (0.4 + (Math.abs(semilla >> 8) % 60) / 100);
+    return [c[0] + Math.sin(ang) * d, c[1] + Math.cos(ang) * d]; };
+  function geoGuardado(clave) { try { return JSON.parse(localStorage.getItem('lilo_geo_' + clave) || 'null'); } catch (e) { return null; } }
+  function popupCaso(x) {
+    return `<b>${x.animal === 'Perro' ? '🐕' : '🐈'} Caso ${esc(x.caso)}</b><br>${esc(x.municipio)} (${esc(x.provincia)})<br>
+      Urgencia: <b>${esc(x.urgencia)}</b><br>Estado: <b>${esc(x.estado)}</b><br>${x.responsable ? 'Lo lleva: ' + esc(x.responsable) + '<br>' : 'Sin asociación<br>'}
+      Aviso: ${esc(x.fecha)}<br>${x.senales ? esc(x.senales) + '<br>' : ''}
+      <a href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a> · <a href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a>`;
+  }
+  function popupAsoc(x) {
+    const tel = telLimpio(x.telefono);
+    return `<b>🤝 ${esc(x.nombre)}</b><br>${esc(x.contacto)}<br>📞 <a href="tel:${esc(tel)}">${esc(x.telefono)}</a> ·
+      <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a><br>
+      ✉️ <a href="mailto:${esc(x.email)}">${esc(x.email)}</a><br>📍 ${esc(x.provincias.join(', '))}<br>
+      🐾 ${esc(x.animales.join(' y '))}<br>${x.ayuda.length ? 'Puede ayudar con: ' + esc(x.ayuda.join(', ')) : ''}`;
+  }
+  const geoPendiente = [];
+  function pintarMapa() {
+    if (!window.L) { $('geoEstado').textContent = 'No se pudo cargar el mapa.'; return; }
+    if (!mapa) {
+      mapa = L.map('mapa', { scrollWheelZoom: true }).setView([40.1, -3.7], window.innerWidth < 600 ? 5 : 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mapa);
+      capas = { pend: L.layerGroup().addTo(mapa), cerr: L.layerGroup(), asoc: L.layerGroup().addTo(mapa) };
+      [['verPendientes', 'pend'], ['verCerrados', 'cerr'], ['verAsociaciones', 'asoc']].forEach(([id, c]) =>
+        $(id).addEventListener('change', e => e.target.checked ? capas[c].addTo(mapa) : capas[c].remove()));
+    }
+    Object.values(capas).forEach(c => c.clearLayers());
+    geoPendiente.length = 0;
+    D.casos.forEach(x => {
+      const centro = CENTROS[x.provincia]; if (!centro) return;
+      const clave = (x.municipio + '|' + x.provincia).toLowerCase();
+      const guardado = geoGuardado(clave);
+      const pos = guardado || desplazar(centro, hash(clave), 0.25);
+      const pend = PENDIENTES.includes(x.estado);
+      const m = L.circleMarker(pos, { radius: pend ? 8 : 6, color: '#fff', weight: 2, fillOpacity: .9,
+        fillColor: pend ? (x.estado === 'Nuevo' ? '#c8412f' : '#e0703a') : '#8a8a8a' }).bindPopup(popupCaso(x));
+      m.addTo(pend ? capas.pend : capas.cerr);
+      if (!guardado) geoPendiente.push({ clave, x, m, pend });
+    });
+    D.asociaciones.filter(x => x.estado === 'aprobada').forEach(x => x.provincias.forEach((p, i) => {
+      const centro = CENTROS[p]; if (!centro) return;
+      L.circleMarker(desplazar(centro, hash(x.id + p), 0.18), { radius: 7, color: '#fff', weight: 2, fillOpacity: .9, fillColor: '#2f6fb3' })
+        .bindPopup(popupAsoc(x)).addTo(capas.asoc);
+    }));
+    geolocalizar();
+  }
+  // Coloca cada caso en su municipio (OpenStreetMap, como mucho una consulta por segundo) y lo recuerda en este navegador.
+  let geolocalizando = false;
+  async function geolocalizar() {
+    if (geolocalizando) return;
+    geolocalizando = true;
+    const cola = geoPendiente.sort((a, b) => b.pend - a.pend).slice(0, 40);
+    for (let i = 0; i < cola.length; i++) {
+      const g = cola[i];
+      if (geoGuardado(g.clave)) { g.m.setLatLng(geoGuardado(g.clave)); continue; }
+      $('geoEstado').textContent = `Situando casos en su municipio… ${i + 1}/${cola.length}`;
+      try {
+        const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=es&q=' +
+          encodeURIComponent(g.x.municipio + ', ' + g.x.provincia + ', España'), { headers: { 'Accept-Language': 'es' } });
+        const j = await r.json();
+        if (j && j[0]) {
+          const pos = [Number(j[0].lat), Number(j[0].lon)];
+          try { localStorage.setItem('lilo_geo_' + g.clave, JSON.stringify(pos)); } catch (e) {}
+          g.m.setLatLng(pos);
+        }
+      } catch (e) { /* se queda en el centro de su provincia */ }
+      await new Promise(r => setTimeout(r, 1100));
+    }
+    $('geoEstado').textContent = '';
+    geolocalizando = false;
+  }
+
+  /* ---------- Carga */
+  function pintarTodo() {
+    $('actualizado').textContent = 'Datos de las ' + D.generado.slice(-5);
+    const provs = [...new Set(D.casos.map(x => x.provincia))].sort();
+    const selP = $('filtroProvincia'), actualP = selP.value;
+    selP.innerHTML = '<option value="">Todas las provincias</option>' + provs.map(p => `<option>${esc(p)}</option>`).join('');
+    selP.value = actualP;
+    const selE = $('filtroEstado'), actualE = selE.value;
+    const estados = [...new Set(D.casos.map(x => x.estado))];
+    selE.innerHTML = '<option value="">Todos los estados</option><option value="__pend">Solo pendientes</option>' + estados.map(e => `<option>${esc(e)}</option>`).join('');
+    selE.value = actualE;
+    pintarResumen(); pintarCasos(); pintarAsociaciones(); pintarActividad();
+    if (mapa && !$('mapa-sec').hidden) pintarMapa();
+  }
+  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia'].forEach(id => $(id).addEventListener('input', pintarCasos));
+  ['buscaAsoc', 'filtroAsoc'].forEach(id => $(id).addEventListener('input', pintarAsociaciones));
+  async function cargar() {
+    $('recargar').disabled = true;
+    try {
+      D = await llamar('adminDatos');
+      $('cargando').hidden = true; mostrarMensaje('');
+      pintarTodo();
+      let s = 'resumen'; try { s = localStorage.getItem('lilo_admin_s') || 'resumen'; } catch (e) {}
+      ir(SECCIONES[s] ? s : 'resumen');
+    } catch (err) {
+      $('cargando').hidden = true;
+      mostrarMensaje(K ? err.message : 'Falta la clave de administración en el enlace. Usa el enlace que te llegó a la cuenta de gestión.', true);
+    }
+    $('recargar').disabled = false;
+  }
+  $('recargar').addEventListener('click', cargar);
+  cargar();
+</script>
+</body>
+</html>
