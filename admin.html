@@ -56,6 +56,14 @@
     .actividad.verde { border-color: #3f8a55; background: #eef7f1; }
     .actividad.amarilla { border-color: #d6a516; background: #fdf7e3; }
     .actividad.roja { border-color: #c8412f; background: #fdeeec; }
+    #waTexto { width: 100%; box-sizing: border-box; font: 14px/1.5 ui-monospace, Menlo, monospace; border: 1px solid var(--borde); border-radius: 10px;
+      padding: 10px 12px; background: #fffaf3; resize: vertical; margin: 8px 0; }
+    .wa-op { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    .wa-op select { margin-left: 6px; }
+    .wa-bts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .wa-pri { background: #25a35a; color: #fff; border-color: #25a35a; font-weight: 700; }
+    a.wa-bt { display: inline-block; text-decoration: none; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--borde); background: var(--tarjeta);
+      color: var(--texto); font-weight: 600; }
     .semaforo { display: flex; flex-wrap: wrap; gap: 8px 18px; font-weight: 700; margin-bottom: 8px; }
     .peores { margin: 6px 0; padding-left: 18px; font-size: 14px; }
     .peores li { margin: 3px 0; }
@@ -155,6 +163,20 @@
       <div class="bloque"><h3>Casos por estado</h3><div class="barras" id="porEstado"></div></div>
     </div>
     <div class="bloque"><h3>Actividad de las asociaciones</h3><div id="actividadAsoc"></div></div>
+    <div class="bloque" id="bloqueWA"><h3>📣 Resumen para WhatsApp</h3>
+      <div class="wa-op">
+        <label>Periodo <select id="waPeriodo"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="0">Desde el principio</option></select></label>
+        <button type="button" id="waRegenerar" class="wa-sec">↻ Volver a generar</button>
+      </div>
+      <textarea id="waTexto" rows="14" spellcheck="false"></textarea>
+      <div class="wa-bts">
+        <button type="button" id="waCopiar" class="wa-pri">📋 Copiar</button>
+        <a id="waCanal" class="wa-bt" target="_blank" rel="noopener">📣 Abrir el canal</a>
+        <a id="waEnviar" class="wa-bt" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>
+      </div>
+      <p class="vacio" id="waNota">Se actualiza solo con los datos del panel. Si lo retocas, se respeta tu texto hasta que pulses «Volver a generar».
+        Al canal hay que pegarlo a mano: WhatsApp no deja que ningún programa escriba en un canal.</p>
+    </div>
     <div class="dos-col">
       <div class="bloque"><h3>Casos por provincia</h3><div class="barras" id="porProvincia"></div></div>
       <div class="bloque"><h3>Asociaciones por comunidad</h3><div class="barras" id="asocPorComunidad"></div></div>
@@ -324,6 +346,7 @@
       <div class="cf-caja motor"><b>⏰ Cada hora · revisarCasos</b><span>A las <b>24 h de quedarse un caso</b>, si no han contado nada: «Contadnos cómo va», con el enlace a la ficha y a «2 · Seguimiento». Casos sin novedades en 48 h: «¿Cómo va?». Casos sin coger en 24 h o atascados: un resumen a Chema.</span></div>
       <div class="cf-caja motor"><b>📅 Cada lunes a las 9 · informeSemanal</b><span>Actividad de las asociaciones (🟢 🟡 🔴 ⚪) y casos de la semana, solo a Chema y a gestión.</span></div>
       <div class="cf-caja motor"><b>👁️ En cada visita · seguimiento discreto</b><span>Cuándo abre cada asociación su panel y las fichas. Lo ves en Asociaciones y en el informe; ellas no lo saben. Tus visitas no cuentan.</span></div>
+      <div class="cf-caja motor"><b>📣 Resumen para WhatsApp · pestaña Resumen</b><span>Avisos y asignados por provincia (7 días, 30 días o todo), siempre con los datos del panel, listo para copiar y pegar en el canal.</span></div>
       <div class="cf-caja motor"><b>⚡ Memoria rápida</b><span>El aviso y las fotos de cada caso se guardan un rato para que la ficha abra al momento. Tu panel abre con los últimos datos y se pone al día solo.</span></div>
     </div>
 
@@ -445,6 +468,7 @@
     $('cifras').innerHTML = cifras.map(([t, n, cl]) => `<div class="cifra ${cl}"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
     barras('porEstado', contar(c, 'estado'));
     pintarActividadAsoc();
+    pintarWA();
     barras('porProvincia', contar(c, 'provincia').slice(0, 12));
     barras('asocPorComunidad', contar(a.filter(x => x.estado === 'aprobada'), x => [...new Set(x.provincias.map(p => COMUNIDAD_DE[p] || p))]).slice(0, 12));
     const ahora = Date.now();
@@ -500,6 +524,42 @@
     b.disabled = true; b.textContent = 'Asignando…';
     try { const r = await llamar('adminAsignar', { caso, id: a.id }); D = r; pintarTodo(); mostrarMensaje(r.mensaje); }
     catch (err) { mostrarMensaje(err.message, true); b.disabled = false; b.textContent = 'Asignar'; }
+  });
+
+  /* ---------- Resumen por provincias para WhatsApp (siempre con los datos del panel) */
+  let waEditado = false;
+  function textoWA() {
+    const dias = +$('waPeriodo').value;
+    const desde = dias ? Date.now() - dias * 864e5 : 0;
+    const cs = D.casos.filter(c => c.ts >= desde && c.provincia && c.provincia !== 'Fuera de España');
+    const por = {};
+    cs.forEach(c => { const x = por[c.provincia] || (por[c.provincia] = { n: 0, a: 0 }); x.n++; if (c.estado !== 'Nuevo') x.a++; });
+    const filas = Object.entries(por).sort((p, q) => (q[1].n - q[1].a) - (p[1].n - p[1].a) || q[1].n - p[1].n || p[0].localeCompare(q[0]));
+    const total = cs.length, asignados = cs.filter(c => c.estado !== 'Nuevo').length, esperan = total - asignados;
+    const periodo = dias ? `últimos ${dias} días` : 'desde el principio';
+    if (!total) return `🐾 *Proyecto Lilo · Así vamos (${periodo})*\n\nNo ha entrado ningún aviso en este periodo.`;
+    const lineas = filas.map(([p, x]) => `📍 *${p}*: ${x.n} ${x.n === 1 ? 'aviso' : 'avisos'} · ${x.a} ${x.a === 1 ? 'asignado' : 'asignados'}` +
+      (x.a === 0 ? ' ⚠️' : x.a === x.n ? ' ✅' : ''));
+    return `🐾 *Proyecto Lilo · Así vamos (${periodo})*\n\n` + lineas.join('\n') +
+      `\n\nEn total: ${total} ${total === 1 ? 'aviso' : 'avisos'} · ${asignados} ya ${asignados === 1 ? 'tiene' : 'tienen'} protectora\n\n` +
+      (esperan ? `Ahora mismo hay *${esperan} ${esperan === 1 ? 'animal esperando' : 'animales esperando'}* a que alguien pulse «Vamos nosotros» 🙏\n` +
+        'Si podéis echar una mano, entrad en vuestro panel de casos: están todos ahí, con su ubicación y sus fotos.\n' +
+        'Cualquier ayuda suma: acogida, transporte, veterinario o difundir 💛'
+        : '¡Todos los avisos tienen ya una protectora! Gracias por vuestro trabajo 💚');
+  }
+  function pintarWA() {
+    if (!D) return;
+    if (!waEditado) $('waTexto').value = textoWA();
+    $('waCanal').href = (D.enlaces && D.enlaces.canal) || '#';
+    $('waEnviar').href = 'https://wa.me/?text=' + encodeURIComponent($('waTexto').value);
+  }
+  $('waTexto').addEventListener('input', () => { waEditado = true; $('waEnviar').href = 'https://wa.me/?text=' + encodeURIComponent($('waTexto').value); });
+  $('waPeriodo').addEventListener('change', () => { waEditado = false; pintarWA(); });
+  $('waRegenerar').addEventListener('click', () => { waEditado = false; pintarWA(); mostrarMensaje('Resumen actualizado con los datos de ahora.'); });
+  $('waCopiar').addEventListener('click', async () => {
+    const t = $('waTexto');
+    try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand('copy'); }
+    $('waCopiar').textContent = '✅ Copiado'; setTimeout(() => { $('waCopiar').textContent = '📋 Copiar'; }, 1800);
   });
 
   /* ---------- Actividad de las asociaciones (solo la ves tú) */
