@@ -303,8 +303,15 @@
       <span class="e salvo">Rescatado</span><span class="fl">→</span><span class="e salvo">En veterinario</span><span class="fl">→</span>
       <span class="e salvo">En acogida</span><span class="fl">→</span><span class="e salvo">En adopción</span><span class="fl">→</span><span class="e fin">Adoptado 🎉</span>
     </div>
+    <div class="cf-estados" style="margin-top:8px">
+      <span class="e marcha">En camino</span><span class="fl">→</span>
+      <span class="e marcha">Solucionado para CER<small>gato de colonia: captura y esterilización</small></span><span class="fl">→</span>
+      <span class="e fin">De vuelta en la Colonia 🐾</span>
+    </div>
     <p class="cf-nota">Otros finales: <b>Pasado a un compañero</b> · <b>No localizado</b> · <b>Ya no hacía falta</b> · <b>No sobrevivió</b>.
-      En verde, los estados «a salvo»: al llegar a uno de ellos, se avisa a quien dio el aviso.</p>
+      En verde, los estados «a salvo»: al llegar a uno de ellos, se avisa a quien dio el aviso.
+      <b>CER</b> (captura, esterilización y retorno) es el camino de los gatos de colonia: no se adoptan, vuelven esterilizados a su colonia.
+      Al llegar a «De vuelta en la Colonia» se cierra el caso y quien avisó recibe un correo específico.</p>
 
     <!-- 4 · QUIÉN VE QUÉ -->
     <h3 class="cf-h" id="cf-roles">4 · Quién ve qué y quién puede hacer qué</h3>
@@ -386,7 +393,7 @@
   const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
   const K = new URLSearchParams(location.search).get('k') || '';
   const PENDIENTES = ['Nuevo', 'Asignado', 'En camino'];
-  const A_SALVO = ['Rescatado', 'En veterinario', 'En acogida', 'En adopción', 'Adoptado'];
+  const A_SALVO = ['Rescatado', 'En veterinario', 'En acogida', 'En adopción', 'Adoptado', 'De vuelta en la Colonia'];
   // Centro aproximado de cada provincia (su capital).
   const CENTROS = { 'Almería': [36.84, -2.46], 'Cádiz': [36.53, -6.29], 'Córdoba': [37.88, -4.78], 'Granada': [37.18, -3.6],
     'Huelva': [37.26, -6.95], 'Jaén': [37.78, -3.79], 'Málaga': [36.72, -4.42], 'Sevilla': [37.39, -5.98], 'Huesca': [42.14, -0.41],
@@ -606,14 +613,14 @@
   }
 
   /* ---------- Asociaciones */
-  const CERRADOS_ASOC = ['Adoptado', 'Pasado a un compañero', 'No localizado', 'Ya no hacía falta', 'No sobrevivió'];
+  const CERRADOS_ASOC = ['Adoptado', 'De vuelta en la Colonia', 'Pasado a un compañero', 'No localizado', 'Ya no hacía falta', 'No sobrevivió'];
   function casosDe(x) {
     const suyos = D.casos.filter(c => c.respId ? c.respId === x.id
       : (c.responsable && c.responsable.trim().toLowerCase() === x.nombre.trim().toLowerCase()));
     if (!suyos.length) return '<div class="resumenCasos vacio0">📂 No lleva ningún caso</div>';
     const abiertos = suyos.filter(c => !CERRADOS_ASOC.includes(c.estado));
     const cerrados = suyos.length - abiertos.length;
-    const salvo = suyos.filter(c => ['Rescatado', 'En veterinario', 'En acogida', 'En adopción', 'Adoptado'].includes(c.estado)).length;
+    const salvo = suyos.filter(c => A_SALVO.includes(c.estado)).length;
     const ofertas = abiertos.reduce((n, c) => n + (c.ayudas || 0), 0);
     const ultimo = abiertos[0] || suyos[0];
     const orden = [...abiertos, ...suyos.filter(c => CERRADOS_ASOC.includes(c.estado))];

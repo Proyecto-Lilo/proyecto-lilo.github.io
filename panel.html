@@ -134,7 +134,7 @@
       tipo === 'otros' ? ['Ver caso', 'suave'] : ['Ver caso', 'suave'];
     const chips = [
       c.urgencia ? `<span class="chip ${urgente ? 'rojo' : ''}">${esc(c.urgencia)}</span>` : '',
-      `<span class="chip ${['Rescatado','En veterinario','En acogida','En adopción','Adoptado'].includes(c.estado) ? 'verde' : ''}">${esc(c.estado)}</span>`,
+      `<span class="chip ${['Rescatado','En veterinario','En acogida','En adopción','Adoptado','De vuelta en la Colonia'].includes(c.estado) ? 'verde' : ''}">${esc(c.estado)}</span>`,
       (tipo === 'otros' || tipo === 'ayudo') && c.responsable ? `<span class="chip">Lo lleva ${esc(c.responsable)}</span>` : '',
       tipo === 'mios' && c.ayudas ? `<span class="chip ayuda">🤝 Os ofrecen ayuda (${c.ayudas})</span>` : '',
     ].join('');
