@@ -11,6 +11,7 @@
   <link rel="icon" href="icono-192.png">
   <link rel="apple-touch-icon" href="icono-180.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root { --fondo: #fbf6ef; --tarjeta: #fff; --texto: #2b2420; --suave: #7a6e66; --borde: #e6dccf;
       --acento: #d9772b; --acento-oscuro: #b45f1d; --rojo: #c8412f; --verde: #3f8a55; }
@@ -55,6 +56,19 @@
     summary { cursor: pointer; font-weight: 600; }
     .guardar { background: #fff6ec; border: 1px solid #f1d9bf; border-radius: 12px; padding: 12px 14px; font-size: 14px; margin-top: 12px; }
     .error { background: #fdecea; color: var(--rojo); border-radius: 12px; padding: 14px; text-align: center; }
+    .pestanas { display: flex; gap: 6px; margin: 12px 0 4px; }
+    .pestanas button { flex: 1; font: inherit; font-weight: 700; font-size: 15px; padding: 9px 10px; border-radius: 12px;
+      border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); cursor: pointer; }
+    .pestanas button.activa { background: var(--acento); border-color: var(--acento); color: #fff; }
+    #mapa { height: 62vh; min-height: 360px; border-radius: 14px; border: 1px solid var(--borde); margin-top: 8px; }
+    .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; align-items: center; margin-top: 10px; }
+    .leyenda label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    .punto { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; }
+    .resumenMapa { color: var(--suave); font-size: 14px; margin: 8px 0 0; }
+    .leaflet-popup-content { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .leaflet-popup-content a { color: var(--acento-oscuro); }
+    .leaflet-popup-content b { font-size: 15px; }
+    .quien { margin: 6px 0; padding: 6px 8px; background: #fff8ef; border-radius: 8px; }
     footer { text-align: center; color: var(--suave); font-size: 13px; margin-top: 30px; }
     footer a { color: var(--acento-oscuro); }
   </style>
@@ -69,6 +83,26 @@
 
   <div id="contenido" hidden>
     <div class="barra"><span id="actualizado"></span><span><a class="guias" href="guias.html">📺 Vídeos guía</a> <button class="recargar" id="recargar">↻ Actualizar</button></span></div>
+    <div class="pestanas" role="tablist">
+      <button class="activa" data-p="casos" role="tab">📋 Casos</button>
+      <button data-p="mapa" role="tab">🗺️ Mapa</button>
+    </div>
+
+    <div id="pMapa" hidden>
+      <p class="pista" style="margin-top:8px">Todas las protectoras de Proyecto Lilo y todos los casos de España. Toca un punto para ver
+        su información. Así podéis encontrar a otras asociaciones y echaros una mano.</p>
+      <div class="leyenda">
+        <label><input type="checkbox" id="verAbiertos" checked> <span class="punto" style="background:#c8412f"></span>Casos abiertos</label>
+        <label><input type="checkbox" id="verCerrados" checked> <span class="punto" style="background:#8a8a8a"></span>Casos cerrados</label>
+        <label><input type="checkbox" id="verProtectoras" checked> <span class="punto" style="background:#2f6fb3"></span>Protectoras</label>
+      </div>
+      <div id="mapa"></div>
+      <p class="resumenMapa" id="resumenMapa">Cargando el mapa…</p>
+      <p class="pista" style="font-size:13px">Los casos se colocan en su municipio y las protectoras en el centro de cada provincia donde
+        actúan. De los casos solo se ven los datos generales; el contacto de quien avisó solo aparece en los casos que lleváis vosotros.</p>
+    </div>
+
+    <div id="pCasos">
     <div class="cifras">
       <div class="cifra" id="cLibres"><b>0</b><span>Libres en vuestra zona</span></div>
       <div class="cifra"><b id="cMios">0</b><span>Los lleváis vosotros</span></div>
@@ -102,6 +136,7 @@
       📌 <b>Guardad este panel</b>: en el móvil, en el menú del navegador elegid «Añadir a pantalla de inicio»; en el
       ordenador, añadidlo a favoritos. <a href="guias.html">Mirad los vídeos guía</a> si no sabéis cómo. El enlace es solo de vuestra asociación: no lo compartáis fuera de ella.
     </div>
+    </div>
   </div>
 
   <div class="error" id="error" hidden></div>
@@ -111,6 +146,7 @@
     <span id="canal"></span><br>Chema y su manada · Proyecto Lilo
   </footer>
 </main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
   const q = new URLSearchParams(location.search);
@@ -182,6 +218,7 @@
       $('actualizado').textContent = 'Actualizado a las ' + new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
       $('contenido').hidden = false;
       $('error').hidden = true;
+      if (mapa && mapaVisible()) setTimeout(() => mapa.invalidateSize(), 60);
     } catch (e) {
       mostrarError(e.message || 'No se ha podido cargar el panel. Probad otra vez en un momento.');
     } finally {
@@ -189,16 +226,145 @@
     }
   }
 
+  /* ---------- Mapa (todas las protectoras y todos los casos de España) */
+  // Centro aproximado de cada provincia (su capital), el mismo que en el panel de administración.
+  const CENTROS = { 'Almería': [36.84, -2.46], 'Cádiz': [36.53, -6.29], 'Córdoba': [37.88, -4.78], 'Granada': [37.18, -3.6],
+    'Huelva': [37.26, -6.95], 'Jaén': [37.78, -3.79], 'Málaga': [36.72, -4.42], 'Sevilla': [37.39, -5.98], 'Huesca': [42.14, -0.41],
+    'Teruel': [40.34, -1.11], 'Zaragoza': [41.65, -0.89], 'Asturias': [43.36, -5.85], 'Islas Baleares': [39.57, 2.65],
+    'Las Palmas': [28.12, -15.43], 'Santa Cruz de Tenerife': [28.46, -16.25], 'Cantabria': [43.46, -3.81], 'Albacete': [38.99, -1.86],
+    'Ciudad Real': [38.99, -3.93], 'Cuenca': [40.07, -2.13], 'Guadalajara': [40.63, -3.17], 'Toledo': [39.86, -4.03],
+    'Ávila': [40.66, -4.7], 'Burgos': [42.34, -3.7], 'León': [42.6, -5.57], 'Palencia': [42.01, -4.53], 'Salamanca': [40.97, -5.66],
+    'Segovia': [40.95, -4.12], 'Soria': [41.76, -2.46], 'Valladolid': [41.65, -4.72], 'Zamora': [41.5, -5.74],
+    'Barcelona': [41.39, 2.17], 'Girona': [41.98, 2.82], 'Lleida': [41.62, 0.62], 'Tarragona': [41.12, 1.25],
+    'Alicante': [38.35, -0.48], 'Castellón': [39.99, -0.05], 'Valencia': [39.47, -0.38], 'Badajoz': [38.88, -6.97],
+    'Cáceres': [39.48, -6.37], 'A Coruña': [43.36, -8.41], 'Lugo': [43.01, -7.56], 'Ourense': [42.34, -7.86],
+    'Pontevedra': [42.43, -8.64], 'Madrid': [40.42, -3.7], 'Murcia': [37.99, -1.13], 'Navarra': [42.81, -1.64],
+    'Álava': [42.85, -2.67], 'Bizkaia': [43.26, -2.93], 'Gipuzkoa': [43.32, -1.98], 'La Rioja': [42.47, -2.45],
+    'Ceuta': [35.89, -5.32], 'Melilla': [35.29, -2.94] };
+  const telLimpio = t => { let n = String(t || '').replace(/[^0-9+]/g, ''); if (n.startsWith('00')) n = '+' + n.slice(2);
+    if (!n.startsWith('+') && n.length === 9) n = '+34' + n; return n; };
+  const hash = t => { let h = 0; for (const ch of String(t)) h = (h * 31 + ch.charCodeAt(0)) | 0; return h; };
+  const desplazar = (c, semilla, r) => { const ang = (Math.abs(semilla) % 360) * Math.PI / 180, d = r * (0.4 + (Math.abs(semilla >> 8) % 60) / 100);
+    return [c[0] + Math.sin(ang) * d, c[1] + Math.cos(ang) * d]; };
+  function geoGuardado(clave) { try { return JSON.parse(localStorage.getItem('lilo_geo_' + clave) || 'null'); } catch (e) { return null; } }
+  let mapa = null, capas = null, M = null, cargandoMapa = false;
+  const geoPendiente = [];
+
+  function enlaceFicha(c) { return c.ficha + (q.get('admin') ? '&admin=1' : ''); }
+  function popupCaso(c) {
+    const quien = c.contacto && (c.contacto.telefono || c.contacto.email) ? (() => {
+      const tel = telLimpio(c.contacto.telefono);
+      return `<div class="quien"><b style="font-size:13px">Quien avisó${c.contacto.nombre ? ': ' + esc(c.contacto.nombre) : ''}</b><br>` +
+        (c.contacto.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(c.contacto.telefono)}</a>` +
+          (c.contacto.whatsapp ? ` · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a>` : '') + '<br>' : '') +
+        (c.contacto.email ? `✉️ <a href="mailto:${esc(c.contacto.email)}">${esc(c.contacto.email)}</a>` : '') + '</div>';
+    })() : '';
+    return `<b>${c.animal === 'Perro' ? '🐕' : '🐈'} Caso ${esc(c.caso)}</b>${c.mio ? ' · <b style="color:#3f8a55">Lo lleváis vosotros</b>' : ''}<br>
+      ${esc(c.municipio)} (${esc(c.provincia)})<br>Urgencia: <b>${esc(c.urgencia || '—')}</b><br>Estado: <b>${esc(c.estado)}</b><br>
+      Aviso: ${esc(c.fecha)}<br>${quien}${c.ficha ? `<a href="${esc(enlaceFicha(c))}">Abrir ficha</a>` : '<span style="color:#7a6e66">Fuera de vuestra zona</span>'}`;
+  }
+  function popupProtectora(x) {
+    const tel = telLimpio(x.telefono);
+    const red = String(x.redes || '').trim();
+    return `<b>🤝 ${esc(x.nombre)}</b>${x.propia ? ' · <b style="color:#3f8a55">Vosotros</b>' : ''}<br>${x.contacto ? esc(x.contacto) + '<br>' : ''}
+      ${x.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(x.telefono)}</a> · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a><br>` : ''}
+      ${x.email ? `✉️ <a href="mailto:${esc(x.email)}">${esc(x.email)}</a><br>` : ''}📍 ${esc(x.provincias.join(', '))}<br>
+      🐾 ${esc(x.animales.join(' y '))}<br>${red ? '📱 ' + esc(red) + '<br>' : ''}${x.ayuda.length ? 'Puede ayudar con: ' + esc(x.ayuda.join(', ')) : ''}`;
+  }
+
+  async function cargarMapa() {
+    if (cargandoMapa) return;
+    cargandoMapa = true;
+    try {
+      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify({ funcion: 'mapaAsociacion', datos: { a: q.get('a'), t: q.get('t'), admin: q.get('admin') || '' } }) })
+        .then(x => x.json());
+      if (!r || !r.ok) throw new Error((r && r.error) || 'No se ha podido cargar el mapa.');
+      M = r;
+      pintarMapa();
+    } catch (e) {
+      $('resumenMapa').textContent = e.message || 'No se ha podido cargar el mapa. Probad otra vez en un momento.';
+    } finally { cargandoMapa = false; }
+  }
+
+  function pintarMapa() {
+    if (!window.L) { $('resumenMapa').textContent = 'No se pudo cargar el mapa.'; return; }
+    if (!mapa) {
+      mapa = L.map('mapa', { scrollWheelZoom: true }).setView([40.1, -3.7], window.innerWidth < 600 ? 5 : 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mapa);
+      capas = { abiertos: L.layerGroup().addTo(mapa), cerrados: L.layerGroup().addTo(mapa), protectoras: L.layerGroup().addTo(mapa) };
+      [['verAbiertos', 'abiertos'], ['verCerrados', 'cerrados'], ['verProtectoras', 'protectoras']].forEach(([id, c]) =>
+        $(id).addEventListener('change', e => e.target.checked ? capas[c].addTo(mapa) : capas[c].remove()));
+      setTimeout(() => { mapa.invalidateSize(); mapa.fitBounds([[36.0, -9.4], [43.8, 3.3]]); }, 60);
+    }
+    Object.values(capas).forEach(c => c.clearLayers());
+    geoPendiente.length = 0;
+    let abiertos = 0, cerrados = 0;
+    M.casos.forEach(c => {
+      const centro = CENTROS[c.provincia]; if (!centro) return;
+      const clave = (c.municipio + '|' + c.provincia).toLowerCase();
+      const guardado = geoGuardado(clave);
+      const pos = guardado || desplazar(centro, hash(clave), 0.25);
+      const m = L.circleMarker(pos, { radius: c.cerrado ? 6 : 8, color: c.mio ? '#3f8a55' : '#fff', weight: c.mio ? 3 : 2, fillOpacity: .9,
+        fillColor: c.cerrado ? '#8a8a8a' : '#c8412f' }).bindPopup(popupCaso(c));
+      m.addTo(c.cerrado ? capas.cerrados : capas.abiertos);
+      c.cerrado ? cerrados++ : abiertos++;
+      if (!guardado) geoPendiente.push({ clave, c, m });
+    });
+    M.protectoras.forEach(x => x.provincias.forEach(p => {
+      const centro = CENTROS[p]; if (!centro) return;
+      L.circleMarker(desplazar(centro, hash(x.nombre + p), 0.18), { radius: 7, color: x.propia ? '#3f8a55' : '#fff', weight: x.propia ? 3 : 2,
+        fillOpacity: .9, fillColor: '#2f6fb3' }).bindPopup(popupProtectora(x)).addTo(capas.protectoras);
+    }));
+    $('resumenMapa').textContent = `${M.protectoras.length} protectoras · ${abiertos} casos abiertos · ${cerrados} cerrados en España`;
+    geolocalizar();
+  }
+  // Coloca cada caso en su municipio (OpenStreetMap, como mucho una consulta por segundo) y lo recuerda en este navegador.
+  let geolocalizando = false;
+  async function geolocalizar() {
+    if (geolocalizando) return;
+    geolocalizando = true;
+    const cola = geoPendiente.sort((x, y) => x.c.cerrado - y.c.cerrado).slice(0, 40);
+    for (const g of cola) {
+      if (geoGuardado(g.clave)) { g.m.setLatLng(geoGuardado(g.clave)); continue; }
+      try {
+        const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=es&q=' +
+          encodeURIComponent(g.c.municipio + ', ' + g.c.provincia + ', España'), { headers: { 'Accept-Language': 'es' } });
+        const j = await r.json();
+        if (j && j[0]) {
+          const pos = [Number(j[0].lat), Number(j[0].lon)];
+          try { localStorage.setItem('lilo_geo_' + g.clave, JSON.stringify(pos)); } catch (e) {}
+          g.m.setLatLng(pos);
+        }
+      } catch (e) { /* se queda en el centro de su provincia */ }
+      await new Promise(r => setTimeout(r, 1100));
+    }
+    geolocalizando = false;
+  }
+
+  /* ---------- Pestañas */
+  function verPestana(p) {
+    document.querySelectorAll('.pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.p === p));
+    $('pCasos').hidden = p !== 'casos';
+    $('pMapa').hidden = p !== 'mapa';
+    try { sessionStorage.setItem('lilo_pestana', p); } catch (e) {}
+    if (p === 'mapa') { if (!M) cargarMapa(); else setTimeout(() => mapa && mapa.invalidateSize(), 60); }
+  }
+  document.querySelectorAll('.pestanas button').forEach(b => b.addEventListener('click', () => verPestana(b.dataset.p)));
+  const mapaVisible = () => !$('pMapa').hidden;
+
   function mostrarError(m) {
     $('error').textContent = m;
     $('error').hidden = false;
     if ($('contenido').hidden) $('zona').textContent = '';
   }
 
-  $('recargar').addEventListener('click', cargar);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(); });
-  setInterval(() => { if (!document.hidden) cargar(); }, 5 * 60 * 1000);
+  const recargarTodo = () => { cargar(); if (mapaVisible()) cargarMapa(); else M = null; };
+  $('recargar').addEventListener('click', recargarTodo);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) recargarTodo(); });
+  setInterval(() => { if (!document.hidden) recargarTodo(); }, 5 * 60 * 1000);
   cargar();
+  try { if (sessionStorage.getItem('lilo_pestana') === 'mapa') verPestana('mapa'); } catch (e) {}
 </script>
 </body>
 </html>
