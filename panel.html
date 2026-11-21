@@ -99,7 +99,7 @@
       <div id="mapa"></div>
       <p class="resumenMapa" id="resumenMapa">Cargando el mapa…</p>
       <p class="pista" style="font-size:13px">Los casos se colocan en su municipio y las protectoras en el centro de cada provincia donde
-        actúan. De los casos solo se ven los datos generales; el contacto de quien avisó solo aparece en los casos que lleváis vosotros.</p>
+        actúan. Podéis abrir la ficha de cualquier caso; el contacto de quien avisó solo aparece en los casos que lleváis vosotros. En los de otra zona podéis ofrecer ayuda a la asociación que los lleva.</p>
     </div>
 
     <div id="pCasos">
@@ -261,7 +261,7 @@
     })() : '';
     return `<b>${c.animal === 'Perro' ? '🐕' : '🐈'} Caso ${esc(c.caso)}</b>${c.mio ? ' · <b style="color:#3f8a55">Lo lleváis vosotros</b>' : ''}<br>
       ${esc(c.municipio)} (${esc(c.provincia)})<br>Urgencia: <b>${esc(c.urgencia || '—')}</b><br>Estado: <b>${esc(c.estado)}</b><br>
-      Aviso: ${esc(c.fecha)}<br>${quien}${c.ficha ? `<a href="${esc(enlaceFicha(c))}">Abrir ficha</a>` : '<span style="color:#7a6e66">Fuera de vuestra zona</span>'}`;
+      Aviso: ${esc(c.fecha)}<br>${quien}${c.fuera ? '<span style="color:#7a6e66">De otra zona · </span>' : ''}${c.ficha ? `<a href="${esc(enlaceFicha(c))}">${c.fuera ? 'Ver ficha y ofrecer ayuda' : 'Abrir ficha'}</a>` : ''}`;
   }
   function popupProtectora(x) {
     const tel = telLimpio(x.telefono);

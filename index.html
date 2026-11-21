@@ -141,6 +141,7 @@
     .estado-caja.libre { border-color: var(--verde); }
     .estado-caja.libre .grande { color: var(--verde); }
     .yo { color: var(--suave); font-size: 14px; text-align: center; margin: -8px 0 16px; }
+    .fuera { background: #e7f0fb; color: #1f5fa8; border-radius: 12px; padding: 10px 14px; font-size: 14px; text-align: center; margin: -6px 0 16px; }
     .secundario { background: transparent; color: var(--acento); border: 1px solid var(--acento); }
     .secundario:hover { background: #fdf1e6; }
     .peligro { background: transparent; color: var(--rojo); border: 1px solid var(--rojo); font-size: 15px; padding: 11px; }
@@ -548,6 +549,7 @@
       <div class="chips" id="casoChips"></div>
       <div class="estado-caja" id="casoEstado"></div>
       <p class="yo" id="casoYo"></p>
+      <p class="fuera" id="casoFuera" hidden>🗺️ Este caso es de otra zona: podéis verlo y, si ya lo lleva una asociación, ofrecerle ayuda (acogida, transporte, veterinario…).</p>
       <div class="ofertas" id="casoAyudas" hidden></div>
       <div class="esencial" id="casoEsencial"></div>
 
@@ -1301,6 +1303,7 @@
       if (c.responsable) caja.appendChild(crear('div', '', 'Lo lleva: ' + c.responsable));
       $('casoYo').textContent = 'Estás viendo el caso como ' + (r.yo.rol === 'chema' ? 'Chema' : r.yo.nombre) +
         (r.yo.rol === 'responsable' ? ' (lo lleváis vosotros)' : '') + '.';
+      $('casoFuera').hidden = r.yo.rol !== 'fuera';
       $('bloqueQuedarse').hidden = !r.puede.quedarse;
       $('tituloQuedarse').textContent = r.yo.rol === 'chema' ? '¿Te lo quedas tú?' : '¿Podéis ir vosotros?';
       $('btnQuedarse').textContent = r.yo.rol === 'chema' ? '🐾 Me encargo yo' : '🐾 Vamos nosotros';
@@ -1385,7 +1388,8 @@
       }
       $('casoAviso').textContent = c.aviso || 'No hemos podido leer el aviso.';
       pintarAviso(c);
-      $('casoCarpeta').href = c.carpeta;
+      $('casoCarpeta').href = c.carpeta || '#';
+      $('casoCarpeta').parentNode.hidden = !c.carpeta;
     };
     if (credencial.a && credencial.t) {
       $('casoPanelEnlace').href = 'panel.html?a=' + encodeURIComponent(credencial.a) + '&t=' + encodeURIComponent(credencial.t) + (credencial.admin ? '&admin=1' : '');
