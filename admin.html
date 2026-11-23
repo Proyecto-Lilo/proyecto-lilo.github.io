@@ -122,7 +122,26 @@
     .chip.ayuda { background: #e8f0fa; color: #1f4f85; border-color: #bcd2ee; }
     .chip.contenido { background: #f4ecfb; color: #5b2d8a; border-color: #dcc8f0; }
     .c-cont { padding: 0 14px 8px; font-size: 13px; color: #5b2d8a; }
-    #masCasos { margin: 10px auto 0; display: block; }
+    #masCasos, #masRedes { margin: 10px auto 0; display: block; }
+    /* ---- Para redes (v30b): los casos con más material para publicar */
+    .redes-intro { color: var(--suave); font-size: 14px; margin: 0 0 10px; max-width: 820px; }
+    .lista-redes { display: grid; gap: 10px; }
+    .red { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; overflow-wrap: anywhere; }
+    .red.con-permiso { border-left: 5px solid var(--verde); }
+    .red.sin-permiso { border-left: 5px solid #d6a516; }
+    .red-cab { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .red-n { font-weight: 800; font-size: 20px; color: var(--acento-oscuro); min-width: 34px; }
+    .red-caso { font-weight: 800; }
+    .red-puntos { margin-left: auto; font-size: 12px; color: #5b2d8a; background: #f4ecfb; border: 1px solid #dcc8f0; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+    .red-permiso { margin: 6px 0; font-size: 14px; font-weight: 600; }
+    .red-permiso.si { color: var(--verde); } .red-permiso.no { color: #8a5a00; }
+    .red-cifras { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; margin: 8px 0; }
+    .red-cifras div { background: #faf5ee; border-radius: 10px; padding: 6px 8px; font-size: 13px; color: var(--suave); }
+    .red-cifras b { display: block; font-size: 18px; color: var(--texto); }
+    .red-cifras .cero b { color: #c9bfb4; }
+    .red-recorrido { font-size: 14px; margin: 6px 0; }
+    .red-nov { font-size: 14px; margin: 6px 0; }
+    .red-nov .cuando { color: var(--suave); font-size: 13px; }
     /* ---- Mi asociación (v29): el panel de chemaysumanada dentro del admin */
     #miaMarco { width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 1px solid var(--borde); border-radius: 14px; background: var(--fondo); display: block; }
     .mia-cab { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; margin: 0 0 10px; }
@@ -180,6 +199,7 @@
     <button data-s="resumen" class="activa">Resumen</button>
     <button data-s="mapa">Mapa</button>
     <button data-s="casos">Casos</button>
+    <button data-s="redes">📣 Para redes</button>
     <button data-s="mia">🐾 Mi asociación</button>
     <button data-s="asociaciones">Asociaciones</button>
     <button data-s="actividad">Actividad</button>
@@ -242,6 +262,21 @@
     <p class="vacio" id="cuentaCasos"></p>
     <div class="lista-casos" id="listaCasos"></div>
     <button id="masCasos" hidden>Ver más casos</button>
+  </section>
+
+  <section id="redes" hidden>
+    <p class="redes-intro">Los casos con más material para subir a redes, de más a menos. Primero los que tienen <b>permiso para redes</b>
+      (sin él no se puede publicar: pídeselo a la asociación); después cuentan los vídeos, las fotos, las novedades contadas, el recorrido
+      de estados y el final feliz. Los vídeos y fotos se cuentan en la carpeta de Drive de cada caso.</p>
+    <div class="filtros">
+      <input type="search" id="buscaRedes" placeholder="Buscar: caso, municipio, asociación…">
+      <select id="filtroRedes"><option value="">Todos los que tienen material</option><option value="permiso">Solo con permiso para redes</option>
+        <option value="videos">Solo con vídeos</option><option value="feliz">Solo con final feliz</option></select>
+      <select id="animalRedes"><option value="">Gatos y perros</option><option>Gato</option><option>Perro</option></select>
+    </div>
+    <p class="vacio" id="cuentaRedes"></p>
+    <div class="lista-redes" id="listaRedes"></div>
+    <button id="masRedes" hidden>Ver más casos</button>
   </section>
 
   <section id="mia" hidden>
@@ -409,6 +444,7 @@
     <ul class="cf-lista">
       <li>🔒 <b>Este panel</b> solo abre con tu enlace secreto, que llegó a la cuenta de gestión. No lo compartas: quien lo tenga ve todo.</li>
       <li>🧑‍🤝‍🧑 <b>Datos de quien avisa</b>: solo los ven la asociación responsable y Chema. El aviso completo está en una carpeta privada. Lo que ve la zona (correo, ficha y Drive) va sin nombre ni contacto, y se tapan también los teléfonos, correos y @usuarios escritos en el texto. Así nadie puede contactar con quien avisó sin quedarse antes el caso con «Vamos nosotros».</li>
+      <li>📣 <b>Para redes</b> (pestaña de este panel): los casos con más material para publicar, numerados de más a menos. De cada uno dice si tiene <b>permiso para redes</b> (sin él, pedírselo a la asociación), cuántos vídeos, fotos de seguimiento y fotos del aviso hay en Drive, cuántas novedades contadas y actualizaciones, el recorrido de estados (por ejemplo Asignado → Rescatado → En acogida), la última actualización y las fotos en miniatura. Botones para abrir la ficha, la carpeta de Drive con las fotos y vídeos, y copiar un resumen del caso para escribir el post. Filtros: solo con permiso, solo con vídeos, solo con final feliz.</li>
       <li>🐾 <b>Mi asociación</b> (pestaña de este panel): Chema también rescata como <b>chemaysumanada</b>. Ve su panel igual que cualquier protectora (casos libres de Cantabria, los que lleva, mapa, «Vamos nosotros», seguimiento). Los casos que coge con su enlace de Chema cuentan también como de chemaysumanada. Lo que abre desde aquí no cuenta como actividad.</li>
       <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive. Por defecto salen primero los que más dan para hacer <b>contenido</b> (🎬): manda el permiso para redes y luego los vídeos y las fotos que hay en Drive (también lo subido directamente a «2 · Seguimiento» sin novedad, y las fotos del aviso), las novedades contadas, el final feliz (adoptado o de vuelta en la colonia) y las ofertas de ayuda; se puede cambiar a «Más recientes primero».</li>
       <li>🗺️ <b>Mapa del panel de cada asociación</b>: ve todas las protectoras dadas de alta (con su teléfono y correo, para ayudarse entre ellas) y todos los casos de España solo con datos generales (número, animal, municipio, provincia, urgencia, estado y fecha). Puede abrir la ficha de cualquier caso. El contacto de quien avisó solo sale en los casos que lleva esa asociación. En los casos de <b>otra zona</b> ve todo el aviso sin contacto y sin carpeta de Drive, y solo puede pulsar «Podemos ayudar» (no puede quedárselo, cambiar el estado ni soltarlo).</li>
@@ -488,7 +524,7 @@
   }
 
   /* ---------- Pestañas */
-  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', mia: 'mia', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
+  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', redes: 'redes', mia: 'mia', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
   function ir(s) {
     Object.entries(SECCIONES).forEach(([k, id]) => $(id).hidden = !D || k !== s);
     document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.s === s));
@@ -497,7 +533,8 @@
       pintarMapa();
       setTimeout(() => { mapa.invalidateSize(); if (primera) mapa.fitBounds([[36.0, -9.4], [43.8, 3.3]]); }, 60);
     }
-    if (s === 'casos' && D && !hPedido) cargarH();
+    if ((s === 'casos' || s === 'redes') && D && !hPedido) cargarH();
+    if (s === 'redes' && D) pintarRedes();
     if (s === 'mia' && D) abrirMia();
     try { localStorage.setItem('lilo_admin_s', s); } catch (e) {}
   }
@@ -554,7 +591,7 @@
     try {
       H = await llamar('adminCasos');
       try { localStorage.setItem(CACHE_H, JSON.stringify(H)); } catch (e) {}
-      if (D) pintarCasos();
+      if (D) { pintarCasos(); pintarRedes(); }
       if (H.pendientes > 0 && ++tandas < 6) cargarH(); else tandas = 0;
     } catch (err) { tandas = 0; if (!H) $('cuentaCasos').textContent += ' · No se pudo cargar el historial: ' + err.message; }
   }
@@ -612,8 +649,66 @@
     if (textos) motivos.push(`✍️ ${textos} ${textos === 1 ? 'novedad contada' : 'novedades contadas'}`);
     if (feliz) motivos.push('🏡 final feliz: ' + x.estado.toLowerCase()); else if (salvo) motivos.push('✅ a salvo');
     if (ofertas) motivos.push(`🤝 ${ofertas} ${ofertas === 1 ? 'ayuda' : 'ayudas'}`);
-    return { puntos, motivos, permiso };
+    const actualizaciones = h.filter(e => e.que !== 'Ofrece ayuda').length;
+    const ultima = h.filter(e => e.que !== 'Ofrece ayuda').slice(-1)[0];
+    return { puntos, motivos, permiso, fotos, videos, delAviso, textos, actualizaciones, ofertas, feliz, ultima };
   }
+
+  /* ---------- Para redes (v30b): ranking de casos por material para publicar */
+  let verRedes = 20;
+  function recorrido(x) {
+    const pasos = [];
+    histDe(x.caso).forEach(e => { if (e.estado && pasos[pasos.length - 1] !== e.estado) pasos.push(e.estado); });
+    if (!pasos.length || pasos[pasos.length - 1] !== x.estado) pasos.push(x.estado);
+    return pasos;
+  }
+  function resumenRedes(x, c) {
+    const nov = histDe(x.caso).filter(e => e.que !== 'Ofrece ayuda' && e.texto);
+    return [`Caso ${x.caso} · ${x.animal} · ${x.municipio} (${x.provincia})`, `Estado: ${x.estado}` + (x.responsable ? ` · Lo lleva: ${x.responsable}` : ''),
+      `Recorrido: ${recorrido(x).join(' → ')}`, `Material: ${c.videos} vídeos, ${c.fotos} fotos de seguimiento, ${c.delAviso} fotos del aviso`,
+      `Permiso para redes: ${c.permiso ? 'sí' : 'NO (pedirlo antes de publicar)'}`, '', 'Novedades:',
+      ...nov.map(e => `- ${e.fecha.slice(0, 10)} (${e.quien}): ${e.texto}`)].join('\n');
+  }
+  function pintarRedes() {
+    if (!D) return;
+    const q = $('buscaRedes').value.toLowerCase().trim(), f = $('filtroRedes').value, an = $('animalRedes').value;
+    const todos = D.casos.map(x => [x, contenido(x)]).filter(([x, c]) => c.puntos > 0);
+    const lista = todos.filter(([x, c]) => (!an || x.animal === an) && (f !== 'permiso' || c.permiso) && (f !== 'videos' || c.videos) &&
+      (f !== 'feliz' || c.feliz) && (!q || [x.caso, x.municipio, x.provincia, x.responsable, x.estado].join(' ').toLowerCase().includes(q)))
+      .sort((a, b) => b[1].puntos - a[1].puntos || b[0].ts - a[0].ts);
+    $('cuentaRedes').textContent = lista.length + ' casos con material · ' + todos.filter(([x, c]) => c.permiso).length + ' con permiso para redes' +
+      (H ? '' : ' · cargando las novedades…') + (H && H.pendientes > 0 ? ' · contando fotos y vídeos en Drive (faltan ' + H.pendientes + ' casos)…' : '');
+    const cifra = (n, t) => `<div class="${n ? '' : 'cero'}"><b>${n}</b>${t}</div>`;
+    $('listaRedes').innerHTML = lista.slice(0, verRedes).map(([x, c], i) => {
+      const fotosNov = histDe(x.caso).flatMap(e => e.archivos || []).slice(-8);
+      return `<div class="red ${c.permiso ? 'con-permiso' : 'sin-permiso'}">
+        <div class="red-cab"><span class="red-n">#${i + 1}</span><span class="red-caso">${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}
+          <span>${esc(x.municipio)} <span class="c-meta">(${esc(x.provincia)})</span></span>
+          <span class="c-meta">${x.responsable ? 'Lo lleva <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}</span>
+          <span class="red-puntos">🎬 ${Math.round(c.puntos)} puntos</span></div>
+        <div class="red-permiso ${c.permiso ? 'si' : 'no'}">${c.permiso ? '📣 Tiene permiso para redes' : '⚠️ Sin permiso para redes: pídeselo a ' + esc(x.responsable || 'la asociación') + ' antes de publicar'}</div>
+        <div class="red-cifras">${cifra(c.videos, c.videos === 1 ? 'vídeo' : 'vídeos')}${cifra(c.fotos, 'fotos de seguimiento')}${cifra(c.delAviso, 'fotos del aviso')}
+          ${cifra(c.textos, c.textos === 1 ? 'novedad contada' : 'novedades contadas')}${cifra(c.actualizaciones, 'actualizaciones')}${cifra(c.ofertas, c.ofertas === 1 ? 'oferta de ayuda' : 'ofertas de ayuda')}</div>
+        <div class="red-recorrido"><b>Estado:</b> ${esc(recorrido(x).join(' → '))}${c.feliz ? ' 🏡 <b>final feliz</b>' : A_SALVO.includes(x.estado) ? ' ✅ a salvo' : ''}</div>
+        ${c.ultima ? `<div class="red-nov"><span class="cuando">Última actualización: ${esc(c.ultima.fecha)} · ${esc(c.ultima.quien)}</span><br>${esc(c.ultima.que)}${c.ultima.estado ? ': <b>' + esc(c.ultima.estado) + '</b>' : ''}${c.ultima.texto ? ' · «' + esc(c.ultima.texto) + '»' : ''}</div>` : `<div class="red-nov c-meta">Aviso del ${esc(String(x.fecha).slice(0, 10))}, sin actualizaciones todavía.</div>`}
+        ${minis(fotosNov)}
+        <div class="acciones"><a class="boton primario" href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>
+          ${x.carpeta ? `<a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">📂 Fotos y vídeos en Drive</a>` : ''}
+          <button data-copiar-red="${esc(x.caso)}">📋 Copiar resumen del caso</button></div></div>`; }).join('') ||
+      `<p class="vacio">${H ? 'No hay casos con material con esos filtros.' : 'Cargando…'}</p>`;
+    $('masRedes').hidden = lista.length <= verRedes;
+    $('masRedes').textContent = 'Ver más casos (' + (lista.length - verRedes) + ' más)';
+  }
+  ['buscaRedes', 'filtroRedes', 'animalRedes'].forEach(id => $(id).addEventListener('input', () => { verRedes = 20; pintarRedes(); }));
+  $('masRedes').addEventListener('click', () => { verRedes += 20; pintarRedes(); });
+  $('listaRedes').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-copiar-red]');
+    if (!b) return;
+    const x = D.casos.find(c => c.caso === b.dataset.copiarRed);
+    try { await navigator.clipboard.writeText(resumenRedes(x, contenido(x))); b.textContent = '✅ Copiado'; }
+    catch (err) { b.textContent = 'No se pudo copiar'; }
+    setTimeout(() => { b.textContent = '📋 Copiar resumen del caso'; }, 2000);
+  });
   const abiertos = new Set();
   function pintarCasos() {
     const q = $('buscaCaso').value.toLowerCase().trim(), est = $('filtroEstado').value, an = $('filtroAnimal').value,
@@ -966,7 +1061,7 @@
     const resps = [...new Set(D.casos.map(x => x.responsable).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     selA.innerHTML = '<option value="">Todas las asociaciones</option><option value="__sin">Sin asociación</option>' + resps.map(r => `<option>${esc(r)}</option>`).join('');
     selA.value = actualA;
-    pintarResumen(); pintarCasos(); pintarAsociaciones(); pintarActividad();
+    pintarResumen(); pintarCasos(); pintarRedes(); pintarAsociaciones(); pintarActividad();
     if (mapa && !$('mapa-sec').hidden) pintarMapa();
   }
   ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso', 'ordenCasos'].forEach(id => $(id).addEventListener('input', pintarCasos));
@@ -992,7 +1087,7 @@
       try { localStorage.setItem('lilo_soy_admin', '1'); } catch (e) {}
       mostrarMensaje('');
       abrir();
-      if (!$('casos').hidden) cargarH();
+      if (!$('casos').hidden || !$('redes').hidden) cargarH();
       if (!$('mia').hidden && $('miaMarco').contentWindow && $('miaMarco').dataset.url) { try { $('miaMarco').contentWindow.location.reload(); } catch (e) {} }
       try { localStorage.setItem(CACHE, JSON.stringify(D)); } catch (e) {}
     } catch (err) {
