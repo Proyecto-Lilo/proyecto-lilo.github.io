@@ -410,7 +410,7 @@
       <li>🔒 <b>Este panel</b> solo abre con tu enlace secreto, que llegó a la cuenta de gestión. No lo compartas: quien lo tenga ve todo.</li>
       <li>🧑‍🤝‍🧑 <b>Datos de quien avisa</b>: solo los ven la asociación responsable y Chema. El aviso completo está en una carpeta privada. Lo que ve la zona (correo, ficha y Drive) va sin nombre ni contacto, y se tapan también los teléfonos, correos y @usuarios escritos en el texto. Así nadie puede contactar con quien avisó sin quedarse antes el caso con «Vamos nosotros».</li>
       <li>🐾 <b>Mi asociación</b> (pestaña de este panel): Chema también rescata como <b>chemaysumanada</b>. Ve su panel igual que cualquier protectora (casos libres de Cantabria, los que lleva, mapa, «Vamos nosotros», seguimiento). Los casos que coge con su enlace de Chema cuentan también como de chemaysumanada. Lo que abre desde aquí no cuenta como actividad.</li>
-      <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive. Por defecto salen primero los que más dan para hacer <b>contenido</b> (🎬): manda el permiso para redes y luego las fotos del seguimiento, las novedades contadas, el final feliz (adoptado o de vuelta en la colonia) y las ofertas de ayuda; se puede cambiar a «Más recientes primero».</li>
+      <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive. Por defecto salen primero los que más dan para hacer <b>contenido</b> (🎬): manda el permiso para redes y luego los vídeos y las fotos que hay en Drive (también lo subido directamente a «2 · Seguimiento» sin novedad, y las fotos del aviso), las novedades contadas, el final feliz (adoptado o de vuelta en la colonia) y las ofertas de ayuda; se puede cambiar a «Más recientes primero».</li>
       <li>🗺️ <b>Mapa del panel de cada asociación</b>: ve todas las protectoras dadas de alta (con su teléfono y correo, para ayudarse entre ellas) y todos los casos de España solo con datos generales (número, animal, municipio, provincia, urgencia, estado y fecha). Puede abrir la ficha de cualquier caso. El contacto de quien avisó solo sale en los casos que lleva esa asociación. En los casos de <b>otra zona</b> ve todo el aviso sin contacto y sin carpeta de Drive, y solo puede pulsar «Podemos ayudar» (no puede quedárselo, cambiar el estado ni soltarlo).</li>
       <li>📁 <b>Drive</b>: las asociaciones ven en modo lectura la carpeta de sus provincias. Solo pueden subir archivos a «2 · Seguimiento» de los casos que llevan.</li>
       <li>↩️ <b>Siempre hay una versión anterior</b> a la que volver: versiones del motor en Apps Script (Implementar › Gestionar implementaciones), etiquetas en GitHub y copias en Drive.</li>
@@ -546,13 +546,17 @@
   let H = null, hPedido = false, verHasta = 100;
   const CACHE_H = 'lilo_admin_h_' + String(K || '').slice(0, 8);
   try { H = JSON.parse(localStorage.getItem(CACHE_H) || 'null'); } catch (e) {}
+  // Contar las fotos y vídeos de Drive de todos los casos lleva tiempo: el motor cuenta a tandas (v30) y, mientras
+  // queden «pendientes», se le vuelve a pedir (como mucho 6 veces seguidas).
+  let tandas = 0;
   async function cargarH() {
     hPedido = true;
     try {
       H = await llamar('adminCasos');
       try { localStorage.setItem(CACHE_H, JSON.stringify(H)); } catch (e) {}
       if (D) pintarCasos();
-    } catch (err) { if (!H) $('cuentaCasos').textContent += ' · No se pudo cargar el historial: ' + err.message; }
+      if (H.pendientes > 0 && ++tandas < 6) cargarH(); else tandas = 0;
+    } catch (err) { tandas = 0; if (!H) $('cuentaCasos').textContent += ' · No se pudo cargar el historial: ' + err.message; }
   }
   const histDe = caso => (H && H.historial && H.historial[caso]) || [];
   const ayudasDe = caso => (H && H.ayudas && H.ayudas[caso]) || [];
@@ -589,17 +593,22 @@
   const FINAL_FELIZ = ['Adoptado', 'De vuelta en la Colonia'];
   function contenido(x) {
     const h = histDe(x.caso);
-    const fotos = h.reduce((n, e) => n + (e.archivos ? e.archivos.length : 0), 0);
+    // Fotos del seguimiento: las de las novedades o, si hay más, las que hay en «2 · Seguimiento» de Drive (v30).
+    const md = (H && H.medios && H.medios[x.caso]) || {};
+    const fotos = Math.max(h.reduce((n, e) => n + (e.archivos ? e.archivos.length : 0), 0), md.fotos || 0);
+    const videos = md.videos || 0, delAviso = md.aviso || 0;
     const textos = h.filter(e => e.que !== 'Ofrece ayuda' && e.texto && e.texto.length > 15).length;
     const estados = new Set(h.filter(e => e.estado).map(e => e.estado)).size;
     const ofertas = ayudasDe(x.caso).length || x.ayudas || 0;
     const permiso = x.redes === 'Sí';
     const feliz = FINAL_FELIZ.includes(x.estado), salvo = A_SALVO.includes(x.estado);
-    const puntos = (permiso ? 20 : 0) + Math.min(fotos, 12) * 2 + Math.min(textos, 8) * 1.5 + Math.min(estados, 6) +
+    const puntos = (permiso ? 20 : 0) + Math.min(videos, 6) * 3 + Math.min(fotos, 12) * 2 + Math.min(delAviso, 3) + Math.min(textos, 8) * 1.5 + Math.min(estados, 6) +
       (feliz ? 6 : salvo ? 3 : 0) + Math.min(ofertas, 4) + (/EMERGENCIA|Urgente/i.test(x.urgencia) ? 1 : 0);
     const motivos = [];
     if (permiso) motivos.push('📣 permiso para redes');
-    if (fotos) motivos.push(`📷 ${fotos} ${fotos === 1 ? 'foto' : 'fotos'}`);
+    if (videos) motivos.push(`🎥 ${videos} ${videos === 1 ? 'vídeo' : 'vídeos'}`);
+    if (fotos) motivos.push(`📷 ${fotos} ${fotos === 1 ? 'foto' : 'fotos'} de seguimiento`);
+    if (delAviso) motivos.push(`🖼️ ${delAviso} del aviso`);
     if (textos) motivos.push(`✍️ ${textos} ${textos === 1 ? 'novedad contada' : 'novedades contadas'}`);
     if (feliz) motivos.push('🏡 final feliz: ' + x.estado.toLowerCase()); else if (salvo) motivos.push('✅ a salvo');
     if (ofertas) motivos.push(`🤝 ${ofertas} ${ofertas === 1 ? 'ayuda' : 'ayudas'}`);
@@ -617,7 +626,8 @@
     const C = new Map(lista.map(x => [x.caso, contenido(x)]));
     if (orden === 'contenido') lista.sort((a, b) => C.get(b.caso).puntos - C.get(a.caso).puntos || b.ts - a.ts);
     $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos' + (H ? '' : ' · cargando las novedades…') +
-      (orden === 'contenido' ? ' · ordenados por opciones de contenido (primero los que tienen permiso para redes, fotos y novedades)' : '');
+      (orden === 'contenido' ? ' · ordenados por opciones de contenido (primero los que tienen permiso para redes, vídeos, fotos y novedades)' : '') +
+      (H && H.pendientes > 0 ? ' · contando fotos y vídeos en Drive (faltan ' + H.pendientes + ' casos)…' : '');
     $('listaCasos').innerHTML = lista.slice(0, verHasta).map(x => { const ab = abiertos.has(x.caso), nOf = ayudasDe(x.caso).length || x.ayudas;
       return `<div class="caso${ab ? ' abierto' : ''}" data-c="${esc(x.caso)}">
       <button class="caso-cab" aria-expanded="${ab}"><span class="c-id">${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}
