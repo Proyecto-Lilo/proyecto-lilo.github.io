@@ -200,6 +200,7 @@
     <button data-s="mapa">Mapa</button>
     <button data-s="casos">Casos</button>
     <button data-s="redes">📣 Para redes</button>
+    <button data-s="videos">🎬 Vídeos pedidos <span id="nVideos" class="chip Nuevo" hidden></span></button>
     <button data-s="mia">🐾 Mi asociación</button>
     <button data-s="asociaciones">Asociaciones</button>
     <button data-s="actividad">Actividad</button>
@@ -277,6 +278,14 @@
     <p class="vacio" id="cuentaRedes"></p>
     <div class="lista-redes" id="listaRedes"></div>
     <button id="masRedes" hidden>Ver más casos</button>
+  </section>
+
+  <section id="videos" hidden>
+    <p class="redes-intro">Lo que las asociaciones os piden desde la pestaña «🎬 Pedir vídeo» de su panel: un vídeo para la adopción o el vídeo
+      del caso al terminar el rescate. También os llega por correo. Al marcarlo como hecho, la asociación recibe un correo con tu nota.</p>
+    <div class="filtros"><select id="filtroVideos"><option value="Pendiente">⏳ Pendientes</option><option value="Hecho">✅ Hechos</option><option value="">Todos</option></select></div>
+    <p class="vacio" id="cuentaVideos"></p>
+    <div class="tarjetas" id="listaVideos"></div>
   </section>
 
   <section id="mia" hidden>
@@ -524,7 +533,7 @@
   }
 
   /* ---------- Pestañas */
-  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', redes: 'redes', mia: 'mia', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
+  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', redes: 'redes', videos: 'videos', mia: 'mia', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
   function ir(s) {
     Object.entries(SECCIONES).forEach(([k, id]) => $(id).hidden = !D || k !== s);
     document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.s === s));
@@ -573,6 +582,7 @@
     const urgentes = c.filter(x => x.estado === 'Nuevo' && /EMERGENCIA|Urgente/.test(x.urgencia));
     const items = [];
     porAprobar.forEach(x => items.push(`🤝 <b>${esc(x.nombre)}</b> espera aprobación (${esc(x.provincias.join(', '))})`));
+    (D.videos || []).filter(x => x.estado !== 'Hecho').forEach(x => items.push(`🎬 <b>${esc(x.asociacion)}</b> pide: ${esc(x.titulo.toLowerCase())} · ${esc(x.caso)}`));
     urgentes.forEach(x => items.push(`🚨 <a href="${esc(x.ficha)}" target="_blank" rel="noopener">${esc(x.caso)}</a> · ${esc(x.urgencia)} sin asignar · ${esc(x.municipio)} (${esc(x.provincia)})`));
     sinNadie.filter(x => !urgentes.includes(x)).forEach(x => items.push(`⏳ <a href="${esc(x.ficha)}" target="_blank" rel="noopener">${esc(x.caso)}</a> · más de 24 h sin asociación · ${esc(x.municipio)} (${esc(x.provincia)})`));
     $('atencion').innerHTML = items.length ? items.map(i => `<div style="margin:0 0 6px">${i}</div>`).join('') : '<p class="vacio">Todo en orden. 🎉</p>';
@@ -745,6 +755,38 @@
     const abrirlo = !abiertos.has(caso);
     if (abrirlo) { abiertos.add(caso); det.innerHTML = detalleCaso(D.casos.find(x => x.caso === caso)); } else abiertos.delete(caso);
     det.hidden = !abrirlo; div.classList.toggle('abierto', abrirlo); cab.setAttribute('aria-expanded', abrirlo);
+  });
+
+  /* ---------- Vídeos pedidos (v31) */
+  function pintarVideos() {
+    const v = D.videos || [], f = $('filtroVideos').value;
+    const pend = v.filter(x => x.estado !== 'Hecho').length;
+    $('nVideos').textContent = pend; $('nVideos').hidden = !pend;
+    const lista = v.filter(x => !f || (f === 'Hecho' ? x.estado === 'Hecho' : x.estado !== 'Hecho'));
+    $('cuentaVideos').textContent = pend + ' pendientes · ' + (v.length - pend) + ' hechos';
+    $('listaVideos').innerHTML = lista.map(x => { const a = D.asociaciones.find(y => y.id === x.idAsoc) || {}, c = D.casos.find(y => y.caso === x.caso) || {};
+      const tel = telLimpio(a.telefono);
+      return `<div class="tarjeta">
+        <div class="titulo"><span>🎬 ${esc(x.titulo)}</span><span class="chip ${x.estado === 'Hecho' ? 'cerrado' : 'pendiente'}">${x.estado === 'Hecho' ? 'Hecho' : 'Pendiente'}</span></div>
+        <div><b>${esc(x.asociacion)}</b> · caso <b>${esc(x.caso)}</b>${c.municipio ? ' · ' + esc(c.municipio) + ' (' + esc(c.provincia) + ')' : ''}${c.estado ? ' · ' + esc(c.estado) : ''}</div>
+        <div class="meta">Pedido el ${esc(x.fecha)}${x.estado === 'Hecho' ? ' · Hecho el ' + esc(x.hecho) : ''}</div>
+        ${x.texto ? `<div style="margin-top:6px">«${esc(x.texto)}»</div>` : ''}
+        ${x.nota ? `<div class="meta" style="margin-top:6px">Tu nota: «${esc(x.nota)}»</div>` : ''}
+        <div class="meta" style="margin-top:6px">${a.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(a.telefono)}</a> · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a> · ` : ''}${a.email ? `✉️ <a href="mailto:${esc(a.email)}">${esc(a.email)}</a>` : ''}</div>
+        <div class="acciones">${c.ficha ? `<a class="boton" href="${esc(c.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>` : ''}
+          ${c.carpeta ? `<a class="boton" href="${esc(c.carpeta)}" target="_blank" rel="noopener">📂 Fotos y vídeos</a>` : ''}
+          ${x.estado !== 'Hecho' ? `<button class="exito" data-video-hecho="${esc(x.id)}">✅ Marcar como hecho</button>` : ''}</div></div>`; }).join('') ||
+      `<p class="vacio">${f === 'Pendiente' ? 'No hay vídeos pendientes. 🎉' : 'Todavía no hay peticiones.'}</p>`;
+  }
+  $('filtroVideos').addEventListener('input', pintarVideos);
+  $('listaVideos').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-video-hecho]');
+    if (!b) return;
+    const nota = prompt('Nota para la asociación (opcional), por ejemplo dónde ver el vídeo o cuándo se publica:', '');
+    if (nota === null) return;
+    b.disabled = true; b.textContent = 'Guardando…';
+    try { const r = await llamar('adminAtenderVideo', { id: b.dataset.videoHecho, nota }); D = r; pintarTodo(); mostrarMensaje(r.mensaje); }
+    catch (err) { mostrarMensaje(err.message, true); b.disabled = false; b.textContent = '✅ Marcar como hecho'; }
   });
 
   /* ---------- Mi asociación (v29): el panel de chemaysumanada, con admin=1 para que no cuente como actividad */
@@ -1061,7 +1103,7 @@
     const resps = [...new Set(D.casos.map(x => x.responsable).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     selA.innerHTML = '<option value="">Todas las asociaciones</option><option value="__sin">Sin asociación</option>' + resps.map(r => `<option>${esc(r)}</option>`).join('');
     selA.value = actualA;
-    pintarResumen(); pintarCasos(); pintarRedes(); pintarAsociaciones(); pintarActividad();
+    pintarResumen(); pintarCasos(); pintarRedes(); pintarVideos(); pintarAsociaciones(); pintarActividad();
     if (mapa && !$('mapa-sec').hidden) pintarMapa();
   }
   ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso', 'ordenCasos'].forEach(id => $(id).addEventListener('input', pintarCasos));

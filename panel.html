@@ -59,6 +59,20 @@
     .pestanas { display: flex; gap: 6px; margin: 12px 0 4px; }
     .pestanas button { flex: 1; font: inherit; font-weight: 700; font-size: 15px; padding: 9px 10px; border-radius: 12px;
       border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); cursor: pointer; }
+    @media (max-width: 420px) { .pestanas button { font-size: 13.5px; padding: 9px 4px; } }
+    .pv-op { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid var(--borde, #e6dccf); border-radius: 12px;
+      padding: 10px 12px; margin: 8px 0; cursor: pointer; }
+    .pv-op input { margin-top: 4px; }
+    .pv-op small { display: block; color: #7a6e66; }
+    .pv-campo { display: block; margin: 12px 0 4px; font-weight: 700; }
+    .pv-form select, .pv-form textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 9px 10px; border: 1px solid #e6dccf; border-radius: 10px; background: #fff; }
+    .pv-enviar { margin-top: 12px; width: 100%; font: inherit; font-weight: 700; padding: 11px; border: 0; border-radius: 12px; background: #d9772b; color: #fff; cursor: pointer; }
+    .pv-enviar:disabled { opacity: .6; cursor: wait; }
+    .pv-msg { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #eef7f1; color: #23573a; }
+    .pv-msg.mal { background: #fdecea; color: #7a2418; }
+    .pv-pet { background: #fff; border: 1px solid #e6dccf; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: 14px; overflow-wrap: anywhere; }
+    .pv-pet .est { font-weight: 700; }
+    .pv-pet .est.hecho { color: #3f8a55; } .pv-pet .est.pend { color: #b45f1d; }
     .pestanas button.activa { background: var(--acento); border-color: var(--acento); color: #fff; }
     #mapa { height: 62vh; min-height: 360px; border-radius: 14px; border: 1px solid var(--borde); margin-top: 8px; }
     .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; align-items: center; margin-top: 10px; }
@@ -86,6 +100,7 @@
     <div class="pestanas" role="tablist">
       <button class="activa" data-p="casos" role="tab">📋 Casos</button>
       <button data-p="mapa" role="tab">🗺️ Mapa</button>
+      <button data-p="video" role="tab">🎬 Pedir vídeo</button>
     </div>
 
     <div id="pMapa" hidden>
@@ -100,6 +115,25 @@
       <p class="resumenMapa" id="resumenMapa">Cargando el mapa…</p>
       <p class="pista" style="font-size:13px">Los casos se colocan en su municipio y las protectoras en el centro de cada provincia donde
         actúan. Podéis abrir la ficha de cualquier caso; el contacto de quien avisó solo aparece en los casos que lleváis vosotros. En los de otra zona podéis ofrecer ayuda a la asociación que los lleva.</p>
+    </div>
+
+    <div id="pVideo" hidden>
+      <p class="pista" style="margin-top:8px">¿Queréis un vídeo de uno de vuestros casos? Pedídnoslo aquí y Chema y su manada lo preparan
+        con las fotos y vídeos que hayáis subido al caso. Os avisaremos por correo cuando esté.</p>
+      <form class="pv-form" id="pvForm">
+        <label class="pv-op"><input type="radio" name="pvTipo" value="adopcion"><span><b>Necesitamos un vídeo para la adopción</b>
+          <small>Para encontrarle familia: contad en «Algo más» cómo es (carácter, edad, si convive con otros animales…).</small></span></label>
+        <label class="pv-op"><input type="radio" name="pvTipo" value="caso"><span><b>Hemos terminado el rescate y queremos hacer el vídeo del caso</b>
+          <small>Su historia de principio a fin. Subid antes a la ficha las fotos y vídeos que tengáis.</small></span></label>
+        <label class="pv-campo" for="pvCaso">¿De qué caso?</label>
+        <select id="pvCaso"></select>
+        <label class="pv-campo" for="pvTexto">Algo más (opcional)</label>
+        <textarea id="pvTexto" rows="3" maxlength="1000" placeholder="Lo que nos ayude a contar su historia"></textarea>
+        <button class="pv-enviar" id="pvEnviar" type="submit">🎬 Pedir el vídeo</button>
+        <div class="pv-msg" id="pvMsg" hidden></div>
+      </form>
+      <h2>Vuestras peticiones</h2>
+      <div id="pvLista"></div>
     </div>
 
     <div id="pCasos">
@@ -219,6 +253,7 @@
       $('bloqueCerrados').hidden = !r.cerrados.length;
       $('nCerrados').textContent = r.cerrados.length;
       lista('cerrados', r.cerrados, 'cerrados', '');
+      pintarVideos(r);
       if (r.canal) $('canal').innerHTML = ' · <a href="' + esc(r.canal) + '" target="_blank" rel="noopener">Canal de WhatsApp</a>';
       $('actualizado').textContent = 'Actualizado a las ' + new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
       $('contenido').hidden = false;
@@ -347,11 +382,50 @@
     geolocalizando = false;
   }
 
+  /* ---------- Pedir vídeo (v31): a Chema y su manada, de un caso que lleváis */
+  let pvVideos = [];
+  function pintarVideos(r) {
+    const casos = [...r.mios, ...r.cerrados];
+    const sel = $('pvCaso'), antes = sel.value;
+    sel.innerHTML = casos.length ? '<option value="">Elegid un caso…</option>' + casos.map(c =>
+      `<option value="${esc(c.caso)}">${esc(c.caso)} · ${c.animal === 'Perro' ? '🐕' : '🐈'} ${esc(c.municipio)} · ${esc(c.estado)}</option>`).join('')
+      : '<option value="">Todavía no lleváis ningún caso</option>';
+    sel.value = antes;
+    $('pvEnviar').disabled = !casos.length;
+    pvVideos = r.videos || [];
+    pintarPeticiones();
+  }
+  function pintarPeticiones() {
+    $('pvLista').innerHTML = pvVideos.length ? pvVideos.map(x => `<div class="pv-pet">
+      <div><b>${esc(x.titulo)}</b> · caso ${esc(x.caso)}</div>
+      <div class="pista">Pedido el ${esc(x.fecha)}${x.texto ? ' · «' + esc(x.texto) + '»' : ''}</div>
+      <div class="est ${x.estado === 'Hecho' ? 'hecho' : 'pend'}">${x.estado === 'Hecho' ? '✅ Hecho el ' + esc(x.hecho) : '⏳ Pendiente'}</div>
+      ${x.nota ? `<div>«${esc(x.nota)}»</div>` : ''}</div>`).join('') : '<div class="vacio">Todavía no habéis pedido ningún vídeo.</div>';
+  }
+  $('pvForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const tipo = (document.querySelector('input[name=pvTipo]:checked') || {}).value;
+    const msg = $('pvMsg');
+    const decir = (t, mal) => { msg.textContent = t; msg.className = 'pv-msg' + (mal ? ' mal' : ''); msg.hidden = false; };
+    if (!tipo) return decir('Elegid qué vídeo necesitáis.', true);
+    if (!$('pvCaso').value) return decir('Elegid de qué caso.', true);
+    $('pvEnviar').disabled = true; $('pvEnviar').textContent = 'Enviando…';
+    try {
+      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify({ funcion: 'pedirVideo', datos: { a: q.get('a'), t: q.get('t'),
+        tipo, caso: $('pvCaso').value, texto: $('pvTexto').value } }) }).then(x => x.json());
+      if (!r || !r.ok) throw new Error((r && r.error) || 'No se ha podido enviar. Probad otra vez.');
+      decir(r.mensaje);
+      $('pvForm').reset(); pvVideos = r.videos || []; pintarPeticiones();
+    } catch (err) { decir(err.message, true); }
+    $('pvEnviar').disabled = false; $('pvEnviar').textContent = '🎬 Pedir el vídeo';
+  });
+
   /* ---------- Pestañas */
   function verPestana(p) {
     document.querySelectorAll('.pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.p === p));
     $('pCasos').hidden = p !== 'casos';
     $('pMapa').hidden = p !== 'mapa';
+    $('pVideo').hidden = p !== 'video';
     try { sessionStorage.setItem('lilo_pestana', p); } catch (e) {}
     if (p === 'mapa') { if (!M) cargarMapa(); else setTimeout(() => mapa && mapa.invalidateSize(), 60); }
   }
@@ -369,7 +443,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) recargarTodo(); });
   setInterval(() => { if (!document.hidden) recargarTodo(); }, 5 * 60 * 1000);
   cargar();
-  try { if (sessionStorage.getItem('lilo_pestana') === 'mapa') verPestana('mapa'); } catch (e) {}
+  try { const p = sessionStorage.getItem('lilo_pestana'); if (p === 'mapa' || p === 'video') verPestana(p); } catch (e) {}
 </script>
 </body>
 </html>
