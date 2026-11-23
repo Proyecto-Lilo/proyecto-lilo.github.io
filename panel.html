@@ -151,6 +151,11 @@
   const URL_APP = 'https://script.google.com/macros/s/AKfycbzM3bx9_FngJIiSng54z79mJwkgaV_t6sA6j6kUOjbUV7gSQpBUikOaHTkXh1Wz6SEp/exec';
   const q = new URLSearchParams(location.search);
   try { if (localStorage.getItem('lilo_soy_admin') === '1') q.set('admin', '1'); } catch (e) {}
+  // Dentro del administrador (pestaña «Mi asociación», v29) las fichas y enlaces se abren en otra pestaña.
+  if (window.top !== window.self) document.addEventListener('click', e => {
+    const l = e.target.closest('a[href]');
+    if (l && !l.target && /^https?:/.test(l.href)) l.target = '_blank';
+  });
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

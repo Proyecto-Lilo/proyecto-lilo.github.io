@@ -93,6 +93,38 @@
     .leaflet-popup-content a { color: var(--acento-oscuro); }
     .leaflet-popup-content b { font-size: 15px; }
     [hidden] { display: none !important; }
+    /* ---- Casos (v29): lista con la última novedad y el historial desplegable */
+    .lista-casos { display: grid; gap: 8px; }
+    .caso { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; overflow: hidden; }
+    .caso.abierto { border-color: var(--acento); }
+    .caso-cab { width: 100%; text-align: left; border: 0; border-radius: 0; background: none; padding: 10px 14px 6px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+    .caso-cab:hover { background: #fffaf3; }
+    .c-id { font-weight: 800; white-space: nowrap; }
+    .c-lugar { flex: 1 1 180px; min-width: 0; }
+    .c-meta { color: var(--suave); font-size: 13px; white-space: nowrap; }
+    .c-meta b { color: var(--texto); font-weight: 600; }
+    .c-flecha { color: var(--suave); margin-left: auto; transition: transform .15s; }
+    .caso.abierto .c-flecha { transform: rotate(90deg); }
+    .c-nov { padding: 0 14px 10px; font-size: 14px; color: var(--texto); overflow-wrap: anywhere; }
+    .c-nov .cuando { color: var(--suave); font-size: 13px; }
+    .c-nov.sin { color: var(--suave); font-size: 13px; }
+    .minis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .minis a { display: block; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; background: #f3ece2; border: 1px solid var(--borde);
+      font-size: 12px; color: var(--suave); text-decoration: none; text-align: center; line-height: 64px; }
+    .minis img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .c-det { border-top: 1px solid var(--borde); padding: 10px 14px 12px; background: #fffcf8; }
+    .c-det h4 { margin: 4px 0 6px; font-size: 14px; }
+    .hist { list-style: none; margin: 0 0 8px; padding: 0; }
+    .hist li { border-left: 3px solid var(--acento); padding: 2px 0 2px 10px; margin: 0 0 10px; font-size: 14px; overflow-wrap: anywhere; }
+    .hist .cuando { color: var(--suave); font-size: 13px; }
+    .ofertas { margin: 0 0 8px; padding-left: 18px; font-size: 14px; }
+    .ofertas li { margin: 0 0 6px; overflow-wrap: anywhere; }
+    .chip.ayuda { background: #e8f0fa; color: #1f4f85; border-color: #bcd2ee; }
+    #masCasos { margin: 10px auto 0; display: block; }
+    /* ---- Mi asociación (v29): el panel de chemaysumanada dentro del admin */
+    #miaMarco { width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 1px solid var(--borde); border-radius: 14px; background: var(--fondo); display: block; }
+    .mia-cab { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; margin: 0 0 10px; }
+    .mia-cab p { margin: 0; color: var(--suave); font-size: 14px; flex: 1 1 260px; }
     /* ---- Cómo funciona */
     #como h2 { margin: 6px 0 4px; }
     .cf-intro { color: var(--suave); margin: 0 0 12px; max-width: 760px; }
@@ -146,6 +178,7 @@
     <button data-s="resumen" class="activa">Resumen</button>
     <button data-s="mapa">Mapa</button>
     <button data-s="casos">Casos</button>
+    <button data-s="mia">🐾 Mi asociación</button>
     <button data-s="asociaciones">Asociaciones</button>
     <button data-s="actividad">Actividad</button>
     <button data-s="herramientas">Herramientas</button>
@@ -197,13 +230,24 @@
 
   <section id="casos" hidden>
     <div class="filtros">
-      <input type="search" id="buscaCaso" placeholder="Buscar: caso, municipio, asociación…">
+      <input type="search" id="buscaCaso" placeholder="Buscar: caso, municipio, asociación, lo que dice una novedad…">
       <select id="filtroEstado"><option value="">Todos los estados</option><option value="__pend">Solo pendientes</option></select>
-      <select id="filtroAnimal"><option value="">Gatos y perros</option><option>Gato</option><option>Perro</option></select>
       <select id="filtroProvincia"><option value="">Todas las provincias</option></select>
+      <select id="filtroAsocCaso"><option value="">Todas las asociaciones</option></select>
+      <select id="filtroAnimal"><option value="">Gatos y perros</option><option>Gato</option><option>Perro</option></select>
     </div>
     <p class="vacio" id="cuentaCasos"></p>
-    <div class="tarjetas" id="listaCasos"></div>
+    <div class="lista-casos" id="listaCasos"></div>
+    <button id="masCasos" hidden>Ver más casos</button>
+  </section>
+
+  <section id="mia" hidden>
+    <div class="mia-cab">
+      <p>Tu panel como <b>chemaysumanada</b>: casos libres de tu zona, los que llevas (también los que coges como Chema), el mapa y el seguimiento. Lo que abras aquí no cuenta como actividad.</p>
+      <a class="boton" id="miaAbrir" target="_blank" rel="noopener">↗ Abrir en otra pestaña</a>
+    </div>
+    <p class="vacio" id="miaFalta" hidden>No encuentro la asociación chemaysumanada (aprobada y con el correo de Chema). Apúntala desde el formulario de asociaciones y apruébala.</p>
+    <iframe id="miaMarco" title="Panel de chemaysumanada"></iframe>
   </section>
 
   <section id="asociaciones" hidden>
@@ -439,7 +483,7 @@
   }
 
   /* ---------- Pestañas */
-  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
+  const SECCIONES = { resumen: 'resumen', mapa: 'mapa-sec', casos: 'casos', mia: 'mia', asociaciones: 'asociaciones', actividad: 'actividad', herramientas: 'herramientas', como: 'como' };
   function ir(s) {
     Object.entries(SECCIONES).forEach(([k, id]) => $(id).hidden = !D || k !== s);
     document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.s === s));
@@ -448,6 +492,8 @@
       pintarMapa();
       setTimeout(() => { mapa.invalidateSize(); if (primera) mapa.fitBounds([[36.0, -9.4], [43.8, 3.3]]); }, 60);
     }
+    if (s === 'casos' && D && !hPedido) cargarH();
+    if (s === 'mia' && D) abrirMia();
     try { localStorage.setItem('lilo_admin_s', s); } catch (e) {}
   }
   document.querySelectorAll('#pestanas button').forEach(b => b.addEventListener('click', () => ir(b.dataset.s)));
@@ -490,23 +536,89 @@
     $('atencion').innerHTML = items.length ? items.map(i => `<div style="margin:0 0 6px">${i}</div>`).join('') : '<p class="vacio">Todo en orden. 🎉</p>';
   }
 
-  /* ---------- Casos */
-  function pintarCasos() {
-    const q = $('buscaCaso').value.toLowerCase().trim(), est = $('filtroEstado').value, an = $('filtroAnimal').value, pr = $('filtroProvincia').value;
-    const lista = D.casos.filter(x => (!est || (est === '__pend' ? PENDIENTES.includes(x.estado) : x.estado === est)) &&
-      (!an || x.animal === an) && (!pr || x.provincia === pr) &&
-      (!q || [x.caso, x.municipio, x.provincia, x.responsable, x.estado, x.senales].join(' ').toLowerCase().includes(q)));
-    $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos';
-    $('listaCasos').innerHTML = lista.map(x => `<div class="tarjeta">
-      <div class="titulo"><span>${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}</div>
-      <div>${esc(x.municipio)} (${esc(x.provincia)}) · <b>${esc(x.urgencia)}</b></div>
-      <div class="meta">Aviso: ${esc(x.fecha)} · Última novedad: ${esc(x.novedad || '—')}</div>
-      <div class="meta">${x.responsable ? 'Lo lleva: <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}${x.senales ? ' · ' + esc(x.senales) : ''}</div>
-      ${x.redes === 'Sí' ? '<div class="meta">📣 Permiso para redes</div>' : ''}
+  /* ---------- Casos (v29): lista con su última novedad; al tocar uno se despliega su historial entero */
+  // H = historial y ofertas de ayuda de todos los casos (adminCasos). Se guarda en este navegador y se refresca por detrás.
+  let H = null, hPedido = false, verHasta = 100;
+  const CACHE_H = 'lilo_admin_h_' + String(K || '').slice(0, 8);
+  try { H = JSON.parse(localStorage.getItem(CACHE_H) || 'null'); } catch (e) {}
+  async function cargarH() {
+    hPedido = true;
+    try {
+      H = await llamar('adminCasos');
+      try { localStorage.setItem(CACHE_H, JSON.stringify(H)); } catch (e) {}
+      if (D) pintarCasos();
+    } catch (err) { if (!H) $('cuentaCasos').textContent += ' · No se pudo cargar el historial: ' + err.message; }
+  }
+  const histDe = caso => (H && H.historial && H.historial[caso]) || [];
+  const ayudasDe = caso => (H && H.ayudas && H.ayudas[caso]) || [];
+  const idDrive = url => (String(url).match(/\/d\/([\w-]{10,})/) || String(url).match(/[?&]id=([\w-]{10,})/) || [])[1] || '';
+  function minis(archivos) {
+    if (!archivos || !archivos.length) return '';
+    return '<div class="minis">' + archivos.map((url, i) => { const id = idDrive(url);
+      return `<a href="${esc(url)}" target="_blank" rel="noopener" title="Foto ${i + 1}">${id
+        ? `<img loading="lazy" alt="Foto ${i + 1}" src="https://drive.google.com/thumbnail?id=${esc(id)}&sz=w160" onerror="this.replaceWith('📷 ${i + 1}')">` : '📷 ' + (i + 1)}</a>`; }).join('') + '</div>';
+  }
+  // La última novedad: lo último que ha pasado en el caso, sin contar las ofertas de ayuda.
+  function ultimaNovedad(x) {
+    const h = histDe(x.caso).filter(e => e.que !== 'Ofrece ayuda');
+    const e = h[h.length - 1];
+    if (!e) return `<div class="c-nov sin">${H ? 'Sin novedades todavía.' : 'Última novedad: ' + esc(x.novedad || '—')}</div>`;
+    return `<div class="c-nov"><span class="cuando">${esc(e.fecha)} · ${esc(e.quien)}</span> — ${esc(e.que)}${e.estado ? ': <b>' + esc(e.estado) + '</b>' : ''}` +
+      `${e.texto ? ' · «' + esc(e.texto.length > 220 ? e.texto.slice(0, 220) + '…' : e.texto) + '»' : ''}${minis(e.archivos)}</div>`;
+  }
+  function detalleCaso(x) {
+    const h = histDe(x.caso).slice().reverse(), of = ayudasDe(x.caso);
+    return `<h4>Historial completo</h4>${h.length ? '<ul class="hist">' + h.map(e => `<li><div class="cuando">${esc(e.fecha)} · ${esc(e.quien)}</div>
+        <div>${esc(e.que)}${e.estado ? ': <b>' + esc(e.estado) + '</b>' : ''}</div>${e.texto ? `<div>«${esc(e.texto)}»</div>` : ''}${minis(e.archivos)}</li>`).join('') + '</ul>'
+        : `<p class="vacio">${H ? 'Todavía no ha pasado nada en este caso.' : 'Cargando el historial…'}</p>`}
+      ${of.length ? `<h4>🤝 Ofertas de ayuda (${of.length})</h4><ul class="ofertas">${of.map(o => { const tel = telLimpio(o.telefono);
+        return `<li><b>${esc(o.nombre)}</b> · ${esc(o.fecha)}<br>«${esc(o.texto)}»<br>${o.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(o.telefono)}</a> · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a> · ` : ''}${o.email ? `✉️ <a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : ''}</li>`; }).join('')}</ul>` : ''}
+      <div class="meta" style="font-size:13px;color:var(--suave)">${esc(x.urgencia)}${x.sitio ? ' · ' + esc(x.sitio) : ''}${x.cuantos ? ' · ' + esc(x.cuantos) : ''}${x.senales ? ' · ' + esc(x.senales) : ''}${x.redes === 'Sí' ? ' · 📣 Permiso para redes' : ''}</div>
       <div class="acciones"><a class="boton primario" href="${esc(x.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>
-        <a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a></div>
+        ${x.carpeta ? `<a class="boton" href="${esc(x.carpeta)}" target="_blank" rel="noopener">Carpeta</a>` : ''}</div>
       <div class="acciones"><select data-caso="${esc(x.caso)}" style="flex:1;min-width:0;font:inherit;padding:7px;border:1px solid var(--borde);border-radius:10px">${opcionesAsignar(x)}</select>
-        <button data-asignar="${esc(x.caso)}">Asignar</button></div></div>`).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
+        <button data-asignar="${esc(x.caso)}">Asignar</button></div>`;
+  }
+  const abiertos = new Set();
+  function pintarCasos() {
+    const q = $('buscaCaso').value.toLowerCase().trim(), est = $('filtroEstado').value, an = $('filtroAnimal').value,
+      pr = $('filtroProvincia').value, as = $('filtroAsocCaso').value;
+    const lista = D.casos.filter(x => (!est || (est === '__pend' ? PENDIENTES.includes(x.estado) : x.estado === est)) &&
+      (!an || x.animal === an) && (!pr || x.provincia === pr) && (!as || (as === '__sin' ? !x.responsable : x.responsable === as)) &&
+      (!q || [x.caso, x.municipio, x.provincia, x.responsable, x.estado, x.senales, x.urgencia,
+        ...histDe(x.caso).map(e => e.texto + ' ' + e.quien), ...ayudasDe(x.caso).map(o => o.nombre + ' ' + o.texto)].join(' ').toLowerCase().includes(q)));
+    $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos' + (H ? '' : ' · cargando las novedades…');
+    $('listaCasos').innerHTML = lista.slice(0, verHasta).map(x => { const ab = abiertos.has(x.caso), nOf = ayudasDe(x.caso).length || x.ayudas;
+      return `<div class="caso${ab ? ' abierto' : ''}" data-c="${esc(x.caso)}">
+      <button class="caso-cab" aria-expanded="${ab}"><span class="c-id">${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}
+        <span class="c-lugar">${esc(x.municipio)} <span class="c-meta">(${esc(x.provincia)})</span></span>
+        <span class="c-meta">${x.responsable ? 'Lo lleva <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}</span>
+        <span class="c-meta">Aviso ${esc(String(x.fecha).slice(0, 10))}</span>
+        ${nOf ? `<span class="chip ayuda">🤝 ${nOf} ${nOf === 1 ? 'oferta' : 'ofertas'}</span>` : ''}<span class="c-flecha">›</span></button>
+      ${ultimaNovedad(x)}<div class="c-det"${ab ? '' : ' hidden'}>${ab ? detalleCaso(x) : ''}</div></div>`; }).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
+    $('masCasos').hidden = lista.length <= verHasta;
+    $('masCasos').textContent = 'Ver más casos (' + (lista.length - verHasta) + ' más)';
+  }
+  $('masCasos').addEventListener('click', () => { verHasta += 100; pintarCasos(); });
+  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso'].forEach(id => $(id).addEventListener('input', () => { verHasta = 100; }));
+  $('listaCasos').addEventListener('click', e => {
+    const cab = e.target.closest('.caso-cab');
+    if (!cab) return;
+    const div = cab.parentNode, caso = div.dataset.c, det = div.querySelector('.c-det');
+    const abrirlo = !abiertos.has(caso);
+    if (abrirlo) { abiertos.add(caso); det.innerHTML = detalleCaso(D.casos.find(x => x.caso === caso)); } else abiertos.delete(caso);
+    det.hidden = !abrirlo; div.classList.toggle('abierto', abrirlo); cab.setAttribute('aria-expanded', abrirlo);
+  });
+
+  /* ---------- Mi asociación (v29): el panel de chemaysumanada, con admin=1 para que no cuente como actividad */
+  function abrirMia() {
+    const x = D.asociaciones.find(a => a.id === D.miAsociacion);
+    $('miaFalta').hidden = !!(x && x.panel);
+    $('miaMarco').hidden = $('miaAbrir').hidden = !(x && x.panel);
+    if (!x || !x.panel) return;
+    const url = x.panel + '&admin=1';
+    $('miaAbrir').href = url;
+    if ($('miaMarco').dataset.url !== url) { $('miaMarco').dataset.url = url; $('miaMarco').src = url; }
   }
   // Asociaciones dadas de alta: primero las de la provincia y el animal del caso.
   function opcionesAsignar(x) {
@@ -530,7 +642,7 @@
     if (!confirm(`¿Asignar el caso ${caso} a «${a.nombre}»?` + (x.responsable ? ` Ahora lo lleva ${x.responsable}: se le avisará de que pasa a otra asociación.` : '') +
       ' Le llegará el aviso completo con el contacto de quien avisó.')) return;
     b.disabled = true; b.textContent = 'Asignando…';
-    try { const r = await llamar('adminAsignar', { caso, id: a.id }); D = r; pintarTodo(); mostrarMensaje(r.mensaje); }
+    try { const r = await llamar('adminAsignar', { caso, id: a.id }); D = r; pintarTodo(); mostrarMensaje(r.mensaje); cargarH(); }
     catch (err) { mostrarMensaje(err.message, true); b.disabled = false; b.textContent = 'Asignar'; }
   });
 
@@ -808,10 +920,14 @@
     const estados = [...new Set(D.casos.map(x => x.estado))];
     selE.innerHTML = '<option value="">Todos los estados</option><option value="__pend">Solo pendientes</option>' + estados.map(e => `<option>${esc(e)}</option>`).join('');
     selE.value = actualE;
+    const selA = $('filtroAsocCaso'), actualA = selA.value;
+    const resps = [...new Set(D.casos.map(x => x.responsable).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    selA.innerHTML = '<option value="">Todas las asociaciones</option><option value="__sin">Sin asociación</option>' + resps.map(r => `<option>${esc(r)}</option>`).join('');
+    selA.value = actualA;
     pintarResumen(); pintarCasos(); pintarAsociaciones(); pintarActividad();
     if (mapa && !$('mapa-sec').hidden) pintarMapa();
   }
-  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia'].forEach(id => $(id).addEventListener('input', pintarCasos));
+  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso'].forEach(id => $(id).addEventListener('input', pintarCasos));
   ['buscaAsoc', 'filtroAsoc'].forEach(id => $(id).addEventListener('input', pintarAsociaciones));
   // Para que abra al instante: se enseñan los últimos datos guardados en este navegador y se actualizan por detrás.
   const CACHE = 'lilo_admin_d_' + String(K || '').slice(0, 8);
@@ -834,6 +950,8 @@
       try { localStorage.setItem('lilo_soy_admin', '1'); } catch (e) {}
       mostrarMensaje('');
       abrir();
+      if (!$('casos').hidden) cargarH();
+      if (!$('mia').hidden && $('miaMarco').contentWindow && $('miaMarco').dataset.url) { try { $('miaMarco').contentWindow.location.reload(); } catch (e) {} }
       try { localStorage.setItem(CACHE, JSON.stringify(D)); } catch (e) {}
     } catch (err) {
       $('cargando').hidden = true;
