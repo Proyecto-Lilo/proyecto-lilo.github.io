@@ -72,6 +72,7 @@
     .pv-msg.mal { background: #fdecea; color: #7a2418; }
     .pv-pet { background: #fff; border: 1px solid #e6dccf; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: 14px; overflow-wrap: anywhere; }
     .pv-pet .est { font-weight: 700; }
+    .pv-falta { margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: #fff4e5; color: #8a4b08; font-size: 13.5px; }
     .pv-pet .est.hecho { color: #3f8a55; } .pv-pet .est.pend { color: #b45f1d; }
     .pestanas button.activa { background: var(--acento); border-color: var(--acento); color: #fff; }
     #mapa { height: 62vh; min-height: 360px; border-radius: 14px; border: 1px solid var(--borde); margin-top: 8px; }
@@ -399,7 +400,9 @@
     $('pvLista').innerHTML = pvVideos.length ? pvVideos.map(x => `<div class="pv-pet">
       <div><b>${esc(x.titulo)}</b> · caso ${esc(x.caso)}</div>
       <div class="pista">Pedido el ${esc(x.fecha)}${x.texto ? ' · «' + esc(x.texto) + '»' : ''}</div>
-      <div class="est ${x.estado === 'Hecho' ? 'hecho' : 'pend'}">${x.estado === 'Hecho' ? '✅ Hecho el ' + esc(x.hecho) : '⏳ Pendiente'}</div>
+      <div class="est ${x.estado === 'Hecho' ? 'hecho' : 'pend'}">${x.estado === 'Hecho' ? '✅ Hecho el ' + esc(x.hecho)
+        : x.revision === 'Lista' ? '⏳ Pendiente · ya tenemos todo lo necesario' : '⏳ Pendiente'}</div>
+      ${x.estado !== 'Hecho' && /^Falta/.test(x.revision || '') ? `<div class="pv-falta">⚠️ Para poder hacerlo nos falta ${esc(x.revision.replace(/^Falta: /, ''))}. En cuanto lo tengáis, nos llega solo.</div>` : ''}
       ${x.nota ? `<div>«${esc(x.nota)}»</div>` : ''}</div>`).join('') : '<div class="vacio">Todavía no habéis pedido ningún vídeo.</div>';
   }
   $('pvForm').addEventListener('submit', async e => {
