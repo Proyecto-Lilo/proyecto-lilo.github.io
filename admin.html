@@ -34,6 +34,7 @@
     .cifra { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; }
     .cifra .n { font-size: 28px; font-weight: 800; line-height: 1.1; }
     .cifra .t { color: var(--suave); font-size: 13px; }
+    .cifra.video { cursor: pointer; } .cifra.video.roja { border-color: #f3c4bd; background: #fdecea; }
     .cifra.roja .n { color: var(--rojo); } .cifra.verde .n { color: var(--verde); } .cifra.azul .n { color: var(--azul); }
     .bloque { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; margin: 12px 0; }
     .barras .fila { display: grid; grid-template-columns: 140px 1fr 36px; gap: 8px; align-items: center; margin: 4px 0; font-size: 14px; }
@@ -454,7 +455,7 @@
     <ul class="cf-lista">
       <li>🔒 <b>Este panel</b> solo abre con tu enlace secreto, que llegó a la cuenta de gestión. No lo compartas: quien lo tenga ve todo.</li>
       <li>🧑‍🤝‍🧑 <b>Datos de quien avisa</b>: solo los ven la asociación responsable y Chema. El aviso completo está en una carpeta privada. Lo que ve la zona (correo, ficha y Drive) va sin nombre ni contacto, y se tapan también los teléfonos, correos y @usuarios escritos en el texto. Así nadie puede contactar con quien avisó sin quedarse antes el caso con «Vamos nosotros».</li>
-      <li>🎬 <b>Vídeos pedidos</b> (pestaña de este panel): cada asociación puede pedir desde su panel («🎬 Pedir vídeo») un vídeo para la adopción o el vídeo del caso al terminar el rescate, de uno de sus casos. Llega por correo a Chema y a gestión y sale aquí y en «Necesitan atención». Al pulsar «Marcar como hecho» (con una nota opcional) la asociación recibe un correo y lo ve en su panel.</li>
+      <li>🎬 <b>Vídeos pedidos</b> (pestaña de este panel): cada asociación puede pedir desde su panel («🎬 Pedir vídeo») un vídeo para la adopción o el vídeo del caso al terminar el rescate, de uno de sus casos. Llega al momento un correo a Chema y a gestión con el asunto «🎬 Solicitud de vídeo · caso · asociación», el tipo, el mensaje, si el caso tiene permiso para redes (si no, avisa de pedirlo) y el enlace a la ficha. Sale aquí, en «Necesitan atención» y en la primera cifra del Resumen («🎬 Solicitudes de vídeo pendientes», en rojo si hay alguna; tócala para ir a la pestaña). Al pulsar «Marcar como hecho» (con una nota opcional) la asociación recibe un correo y lo ve en su panel.</li>
       <li>📣 <b>Para redes</b> (pestaña de este panel): los casos con más material para publicar, numerados de más a menos. De cada uno dice si tiene <b>permiso para redes</b> (sin él, pedírselo a la asociación), cuántos vídeos, fotos de seguimiento y fotos del aviso hay en Drive, cuántas novedades contadas y actualizaciones, el recorrido de estados (por ejemplo Asignado → Rescatado → En acogida), la última actualización y las fotos en miniatura. Botones para abrir la ficha, la carpeta de Drive con las fotos y vídeos, y copiar un resumen del caso para escribir el post. Filtros: solo con permiso, solo con vídeos, solo con final feliz.</li>
       <li>🐾 <b>Mi asociación</b> (pestaña de este panel): Chema también rescata como <b>chemaysumanada</b>. Ve su panel igual que cualquier protectora (casos libres de Cantabria, los que lleva, mapa, «Vamos nosotros», seguimiento). Los casos que coge con su enlace de Chema cuentan también como de chemaysumanada. Lo que abre desde aquí no cuenta como actividad.</li>
       <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive. Por defecto salen primero los que más dan para hacer <b>contenido</b> (🎬): manda el permiso para redes y luego los vídeos y las fotos que hay en Drive (también lo subido directamente a «2 · Seguimiento» sin novedad, y las fotos del aviso), las novedades contadas, el final feliz (adoptado o de vuelta en la colonia) y las ofertas de ayuda; se puede cambiar a «Más recientes primero».</li>
@@ -572,7 +573,10 @@
       ['Asociaciones activas', a.filter(x => x.estado === 'aprobada').length, 'azul'],
       ['Por aprobar', a.filter(x => x.estado === 'pendiente').length, a.some(x => x.estado === 'pendiente') ? 'roja' : ''],
     ];
-    $('cifras').innerHTML = cifras.map(([t, n, cl]) => `<div class="cifra ${cl}"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
+    // v32: las solicitudes de vídeo pendientes, lo primero que se ve al entrar (toca para ir a la pestaña).
+    const vPend = (D.videos || []).filter(x => x.estado !== 'Hecho').length;
+    cifras.unshift(['🎬 Solicitudes de vídeo pendientes', vPend, vPend ? 'roja video' : 'video']);
+    $('cifras').innerHTML = cifras.map(([t, n, cl]) => `<div class="cifra ${cl}"${/video/.test(cl) ? ' role="button" tabindex="0" title="Ver los vídeos pedidos"' : ''}><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
     barras('porEstado', contar(c, 'estado'));
     pintarActividadAsoc();
     pintarWA();
@@ -773,6 +777,7 @@
         <div><b>${esc(x.asociacion)}</b> · caso <b>${esc(x.caso)}</b>${c.municipio ? ' · ' + esc(c.municipio) + ' (' + esc(c.provincia) + ')' : ''}${c.estado ? ' · ' + esc(c.estado) : ''}</div>
         <div class="meta">Pedido el ${esc(x.fecha)}${x.estado === 'Hecho' ? ' · Hecho el ' + esc(x.hecho) : ''}</div>
         ${x.texto ? `<div style="margin-top:6px">«${esc(x.texto)}»</div>` : ''}
+        <div class="meta" style="margin-top:6px">${c.redes === 'Sí' ? '📣 Permiso para redes: <b>Sí</b>' : '⚠️ <b style="color:var(--rojo)">Sin permiso para redes</b>: pídeselo antes de publicar'}</div>
         ${x.nota ? `<div class="meta" style="margin-top:6px">Tu nota: «${esc(x.nota)}»</div>` : ''}
         <div class="meta" style="margin-top:6px">${a.telefono ? `📞 <a href="tel:${esc(tel)}">${esc(a.telefono)}</a> · <a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">WhatsApp</a> · ` : ''}${a.email ? `✉️ <a href="mailto:${esc(a.email)}">${esc(a.email)}</a>` : ''}</div>
         <div class="acciones">${c.ficha ? `<a class="boton" href="${esc(c.ficha)}" target="_blank" rel="noopener">Abrir ficha</a>` : ''}
@@ -781,6 +786,7 @@
       `<p class="vacio">${f === 'Pendiente' ? 'No hay vídeos pendientes. 🎉' : 'Todavía no hay peticiones.'}</p>`;
   }
   $('filtroVideos').addEventListener('input', pintarVideos);
+  $('cifras').addEventListener('click', e => { if (e.target.closest('.cifra.video')) { $('filtroVideos').value = 'Pendiente'; ir('videos'); } });
   $('listaVideos').addEventListener('click', async e => {
     const b = e.target.closest('button[data-video-hecho]');
     if (!b) return;
