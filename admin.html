@@ -120,6 +120,8 @@
     .ofertas { margin: 0 0 8px; padding-left: 18px; font-size: 14px; }
     .ofertas li { margin: 0 0 6px; overflow-wrap: anywhere; }
     .chip.ayuda { background: #e8f0fa; color: #1f4f85; border-color: #bcd2ee; }
+    .chip.contenido { background: #f4ecfb; color: #5b2d8a; border-color: #dcc8f0; }
+    .c-cont { padding: 0 14px 8px; font-size: 13px; color: #5b2d8a; }
     #masCasos { margin: 10px auto 0; display: block; }
     /* ---- Mi asociación (v29): el panel de chemaysumanada dentro del admin */
     #miaMarco { width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 1px solid var(--borde); border-radius: 14px; background: var(--fondo); display: block; }
@@ -235,6 +237,7 @@
       <select id="filtroProvincia"><option value="">Todas las provincias</option></select>
       <select id="filtroAsocCaso"><option value="">Todas las asociaciones</option></select>
       <select id="filtroAnimal"><option value="">Gatos y perros</option><option>Gato</option><option>Perro</option></select>
+      <select id="ordenCasos"><option value="contenido">🎬 Más contenido primero</option><option value="recientes">Más recientes primero</option></select>
     </div>
     <p class="vacio" id="cuentaCasos"></p>
     <div class="lista-casos" id="listaCasos"></div>
@@ -407,7 +410,7 @@
       <li>🔒 <b>Este panel</b> solo abre con tu enlace secreto, que llegó a la cuenta de gestión. No lo compartas: quien lo tenga ve todo.</li>
       <li>🧑‍🤝‍🧑 <b>Datos de quien avisa</b>: solo los ven la asociación responsable y Chema. El aviso completo está en una carpeta privada. Lo que ve la zona (correo, ficha y Drive) va sin nombre ni contacto, y se tapan también los teléfonos, correos y @usuarios escritos en el texto. Así nadie puede contactar con quien avisó sin quedarse antes el caso con «Vamos nosotros».</li>
       <li>🐾 <b>Mi asociación</b> (pestaña de este panel): Chema también rescata como <b>chemaysumanada</b>. Ve su panel igual que cualquier protectora (casos libres de Cantabria, los que lleva, mapa, «Vamos nosotros», seguimiento). Los casos que coge con su enlace de Chema cuentan también como de chemaysumanada. Lo que abre desde aquí no cuenta como actividad.</li>
-      <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive.</li>
+      <li>📋 <b>Casos</b> (pestaña de este panel): todos los casos con su estado, quién lo lleva, la fecha, la última novedad (texto, fecha y fotos en miniatura) y las ofertas de ayuda. Se filtra por estado, provincia, asociación y animal, y el buscador mira también el texto de las novedades. Al tocar un caso se despliega su historial entero y las ofertas con su contacto, sin entrar en Drive. Por defecto salen primero los que más dan para hacer <b>contenido</b> (🎬): manda el permiso para redes y luego las fotos del seguimiento, las novedades contadas, el final feliz (adoptado o de vuelta en la colonia) y las ofertas de ayuda; se puede cambiar a «Más recientes primero».</li>
       <li>🗺️ <b>Mapa del panel de cada asociación</b>: ve todas las protectoras dadas de alta (con su teléfono y correo, para ayudarse entre ellas) y todos los casos de España solo con datos generales (número, animal, municipio, provincia, urgencia, estado y fecha). Puede abrir la ficha de cualquier caso. El contacto de quien avisó solo sale en los casos que lleva esa asociación. En los casos de <b>otra zona</b> ve todo el aviso sin contacto y sin carpeta de Drive, y solo puede pulsar «Podemos ayudar» (no puede quedárselo, cambiar el estado ni soltarlo).</li>
       <li>📁 <b>Drive</b>: las asociaciones ven en modo lectura la carpeta de sus provincias. Solo pueden subir archivos a «2 · Seguimiento» de los casos que llevan.</li>
       <li>↩️ <b>Siempre hay una versión anterior</b> a la que volver: versiones del motor en Apps Script (Implementar › Gestionar implementaciones), etiquetas en GitHub y copias en Drive.</li>
@@ -581,6 +584,27 @@
       <div class="acciones"><select data-caso="${esc(x.caso)}" style="flex:1;min-width:0;font:inherit;padding:7px;border:1px solid var(--borde);border-radius:10px">${opcionesAsignar(x)}</select>
         <button data-asignar="${esc(x.caso)}">Asignar</button></div>`;
   }
+  // 🎬 Opciones de contenido de un caso (v29b): cuánto material hay para contar su historia en redes.
+  // Manda el permiso para redes; luego las fotos del seguimiento, las novedades contadas, el final y la ayuda.
+  const FINAL_FELIZ = ['Adoptado', 'De vuelta en la Colonia'];
+  function contenido(x) {
+    const h = histDe(x.caso);
+    const fotos = h.reduce((n, e) => n + (e.archivos ? e.archivos.length : 0), 0);
+    const textos = h.filter(e => e.que !== 'Ofrece ayuda' && e.texto && e.texto.length > 15).length;
+    const estados = new Set(h.filter(e => e.estado).map(e => e.estado)).size;
+    const ofertas = ayudasDe(x.caso).length || x.ayudas || 0;
+    const permiso = x.redes === 'Sí';
+    const feliz = FINAL_FELIZ.includes(x.estado), salvo = A_SALVO.includes(x.estado);
+    const puntos = (permiso ? 20 : 0) + Math.min(fotos, 12) * 2 + Math.min(textos, 8) * 1.5 + Math.min(estados, 6) +
+      (feliz ? 6 : salvo ? 3 : 0) + Math.min(ofertas, 4) + (/EMERGENCIA|Urgente/i.test(x.urgencia) ? 1 : 0);
+    const motivos = [];
+    if (permiso) motivos.push('📣 permiso para redes');
+    if (fotos) motivos.push(`📷 ${fotos} ${fotos === 1 ? 'foto' : 'fotos'}`);
+    if (textos) motivos.push(`✍️ ${textos} ${textos === 1 ? 'novedad contada' : 'novedades contadas'}`);
+    if (feliz) motivos.push('🏡 final feliz: ' + x.estado.toLowerCase()); else if (salvo) motivos.push('✅ a salvo');
+    if (ofertas) motivos.push(`🤝 ${ofertas} ${ofertas === 1 ? 'ayuda' : 'ayudas'}`);
+    return { puntos, motivos, permiso };
+  }
   const abiertos = new Set();
   function pintarCasos() {
     const q = $('buscaCaso').value.toLowerCase().trim(), est = $('filtroEstado').value, an = $('filtroAnimal').value,
@@ -589,7 +613,11 @@
       (!an || x.animal === an) && (!pr || x.provincia === pr) && (!as || (as === '__sin' ? !x.responsable : x.responsable === as)) &&
       (!q || [x.caso, x.municipio, x.provincia, x.responsable, x.estado, x.senales, x.urgencia,
         ...histDe(x.caso).map(e => e.texto + ' ' + e.quien), ...ayudasDe(x.caso).map(o => o.nombre + ' ' + o.texto)].join(' ').toLowerCase().includes(q)));
-    $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos' + (H ? '' : ' · cargando las novedades…');
+    const orden = $('ordenCasos').value;
+    const C = new Map(lista.map(x => [x.caso, contenido(x)]));
+    if (orden === 'contenido') lista.sort((a, b) => C.get(b.caso).puntos - C.get(a.caso).puntos || b.ts - a.ts);
+    $('cuentaCasos').textContent = lista.length + ' de ' + D.casos.length + ' casos' + (H ? '' : ' · cargando las novedades…') +
+      (orden === 'contenido' ? ' · ordenados por opciones de contenido (primero los que tienen permiso para redes, fotos y novedades)' : '');
     $('listaCasos').innerHTML = lista.slice(0, verHasta).map(x => { const ab = abiertos.has(x.caso), nOf = ayudasDe(x.caso).length || x.ayudas;
       return `<div class="caso${ab ? ' abierto' : ''}" data-c="${esc(x.caso)}">
       <button class="caso-cab" aria-expanded="${ab}"><span class="c-id">${x.animal === 'Perro' ? '🐕' : '🐈'} ${esc(x.caso)}</span>${chipEstado(x.estado)}
@@ -597,12 +625,14 @@
         <span class="c-meta">${x.responsable ? 'Lo lleva <b>' + esc(x.responsable) + '</b>' : 'Sin asociación'}</span>
         <span class="c-meta">Aviso ${esc(String(x.fecha).slice(0, 10))}</span>
         ${nOf ? `<span class="chip ayuda">🤝 ${nOf} ${nOf === 1 ? 'oferta' : 'ofertas'}</span>` : ''}<span class="c-flecha">›</span></button>
-      ${ultimaNovedad(x)}<div class="c-det"${ab ? '' : ' hidden'}>${ab ? detalleCaso(x) : ''}</div></div>`; }).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
+      ${C.get(x.caso).motivos.length ? `<div class="c-cont">🎬 ${C.get(x.caso).motivos.join(' · ')}${C.get(x.caso).permiso ? '' : ' · <span style="color:#a0522d">sin permiso para redes</span>'}</div>` : ''}${ultimaNovedad(x)}<div class="c-det"${ab ? '' : ' hidden'}>${ab ? detalleCaso(x) : ''}</div></div>`; }).join('') || '<p class="vacio">No hay casos con esos filtros.</p>';
     $('masCasos').hidden = lista.length <= verHasta;
     $('masCasos').textContent = 'Ver más casos (' + (lista.length - verHasta) + ' más)';
   }
   $('masCasos').addEventListener('click', () => { verHasta += 100; pintarCasos(); });
-  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso'].forEach(id => $(id).addEventListener('input', () => { verHasta = 100; }));
+  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso', 'ordenCasos'].forEach(id => $(id).addEventListener('input', () => { verHasta = 100; }));
+  try { const o = localStorage.getItem('lilo_admin_orden'); if (o) $('ordenCasos').value = o; } catch (e) {}
+  $('ordenCasos').addEventListener('input', () => { try { localStorage.setItem('lilo_admin_orden', $('ordenCasos').value); } catch (e) {} });
   $('listaCasos').addEventListener('click', e => {
     const cab = e.target.closest('.caso-cab');
     if (!cab) return;
@@ -929,7 +959,7 @@
     pintarResumen(); pintarCasos(); pintarAsociaciones(); pintarActividad();
     if (mapa && !$('mapa-sec').hidden) pintarMapa();
   }
-  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso'].forEach(id => $(id).addEventListener('input', pintarCasos));
+  ['buscaCaso', 'filtroEstado', 'filtroAnimal', 'filtroProvincia', 'filtroAsocCaso', 'ordenCasos'].forEach(id => $(id).addEventListener('input', pintarCasos));
   ['buscaAsoc', 'filtroAsoc'].forEach(id => $(id).addEventListener('input', pintarAsociaciones));
   // Para que abra al instante: se enseñan los últimos datos guardados en este navegador y se actualizan por detrás.
   const CACHE = 'lilo_admin_d_' + String(K || '').slice(0, 8);
